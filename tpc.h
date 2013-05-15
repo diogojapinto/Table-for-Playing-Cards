@@ -4,6 +4,7 @@
 #include "headers.h"
 
 #define MAX_NR_PLAYERS 52
+#define MIN_NR_PLAYERS 52
 #define MAX_NICK_LENGTH 21
 #define NR_CARDS 52
 
@@ -32,5 +33,10 @@ typedef struct {
    * missing mutexes and condition variables
    */
 } shared_fields_t;
+
+int verifyCmdArgs(char **argv);
+void initFIFO(char *name);
+void initSharedMem(char **args);
+void exitHandler(void);
 
 #endif
