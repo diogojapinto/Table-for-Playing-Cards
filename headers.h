@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <string.h>
+#include <time.h>
 
 /*
  * system libraries
@@ -23,6 +24,8 @@
  */
 #include <fcntl.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <errno.h>
 
 
 #endif

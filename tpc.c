@@ -5,12 +5,13 @@ int shmid = 0;
 shared_fields_t *shm_ptr = NULL;
 char own_fifo_path[PATH_MAX];
 int fifo_filedes = -1;
+char hand[NR_CARDS / 2][CHARS_PER_CARD];
 
 int main (int argc, char **argv) {
   
   // verifies if the number of arguments is correct
   if (argc != 4) {
-    printf("usage: %s <player's name> <table's name> <nr. players>", argv[0]);
+    printf("usage: %s <player's name> <table's name> <nr. players>\n", argv[0]);
     return -1;
   }
   
@@ -24,8 +25,22 @@ int main (int argc, char **argv) {
     exit(-1);
   }
   
-  initFIFO(argv[1]);
+  initDefaultDeck();
+  shuffleDeck();
+  
   initSharedMem(argv);
+  
+  initFIFO(argv[1]);
+  
+  if (is_dealer) {
+    pthread_t tid;
+    if ((errno = pthread_create(&tid, NULL, giveCards, NULL)) != 0) {
+      perror("pthread_create()");
+      exit(-1);
+    }
+  } {
+    
+  }
   
   return 0;
 }
@@ -58,17 +73,16 @@ int verifyCmdArgs(char **argv) {
 
 
 void initFIFO(char *name) {
-  if (mkfifo(name, S_IRUSR | S_IWUSR) == -1) {
-    perror("mkfifo()");
-    exit(-1);
-  }
+  
+  // tries to create the FIFO
+  mkfifo(name, S_IRUSR | S_IWUSR);
   
   if (realpath(name, own_fifo_path) == NULL) {
     perror("realpath()");
     exit(-1);
   }
   
-  if ((fifo_filedes = open(own_fifo_path, O_RDONLY)) == -1) {
+  if ((fifo_filedes = open(own_fifo_path, O_RDONLY | O_CREAT | O_TRUNC | O_NONBLOCK)) == -1) {
     perror("open()");
   }
 }
@@ -119,8 +133,54 @@ void initSharedMem(char **args) {
   }
 }
 
+void initDefaultDeck() {
+  char ranks[][3] = {" A", " 2", " 3", " 4", " 5", " 6", " 7", " 8", " 9", "10", " J", " Q", " K"};
+  int ranks_nr = 13;
+  char suits[][2] = {"c", "d", "h", "s"};
+  int suits_nr = 4;
+  
+  int i = 0;
+  int j = 0;
+  for (i = 0; i < suits_nr; i++) {
+    for (j = 0; j < ranks_nr; j++) {
+      int curr_card = (i * ranks_nr) + j;
+      strcpy(cards[curr_card], ranks[j]);
+      strcat(cards[curr_card], suits[i]);
+    }
+  }
+}
+
+void shuffleDeck() {
+  
+  srand(time(NULL));
+  
+  int nr_cycles = 200, i = 0;
+  
+  for (i = 0; i < nr_cycles; i++) {
+    int rand_card_1 = rand() % NR_CARDS;
+    int rand_card_2 = rand() % NR_CARDS;
+    char tmp[4];
+    strcpy(tmp,cards[rand_card_1]);
+    strcpy(cards[rand_card_1],cards[rand_card_2]);
+    strcpy(cards[rand_card_2], tmp);
+  }
+}
+
+void *giveCards(void *ptr) {
+  return NULL;
+}
+
+void receiveCards() {
+  
+}
+
 void exitHandler(void) {
+  
+  // closes and deletes the own fifo
   close(fifo_filedes);
+  unlink(own_fifo_path);
+  
+  // deatach from shared memory block
   shmdt(shm_ptr);
   
   // by convention, the dealer frees the shared memory block

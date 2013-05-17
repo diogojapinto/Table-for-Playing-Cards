@@ -1,6 +1,6 @@
 # macros definitions
 CC = gcc
-CFLAGS = -Wall -pthread
+CFLAGS = -Wall -pthread -lrt
 XHDRS = headers.h
 
 all: tpc

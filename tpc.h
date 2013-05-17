@@ -4,12 +4,13 @@
 #include "headers.h"
 
 #define MAX_NR_PLAYERS 52
-#define MIN_NR_PLAYERS 52
+#define MIN_NR_PLAYERS 2
 #define MAX_NICK_LENGTH 21
 #define NR_CARDS 52
+#define CHARS_PER_CARD 4
 
 // array to hold the ordered deck of cards
-char cards[NR_CARDS][2];
+char cards[NR_CARDS][CHARS_PER_CARD];
 
 // structure to hold each player's info
 typedef struct {
@@ -27,7 +28,7 @@ typedef struct {
   int turn_to_play;
   int round_number;
   players_info_t players[MAX_NR_PLAYERS];
-  char cards_on_table[NR_CARDS][2];
+  char cards_on_table[NR_CARDS][CHARS_PER_CARD];
   
   /*
    * missing mutexes and condition variables
@@ -38,5 +39,9 @@ int verifyCmdArgs(char **argv);
 void initFIFO(char *name);
 void initSharedMem(char **args);
 void exitHandler(void);
+void initDefaultDeck();
+void shuffleDeck();
+void *giveCards(void *ptr);
+void receiveCards();
 
 #endif
