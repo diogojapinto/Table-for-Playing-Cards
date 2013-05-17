@@ -29,10 +29,8 @@ typedef struct {
   int round_number;
   players_info_t players[MAX_NR_PLAYERS];
   char cards_on_table[NR_CARDS][CHARS_PER_CARD];
-  
-  /*
-   * missing mutexes and condition variables
-   */
+  pthread_mutex_t startup_mut;
+  pthread_cond_t startup_cond_var;
 } shared_fields_t;
 
 int verifyCmdArgs(char **argv);

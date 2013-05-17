@@ -6,6 +6,7 @@ shared_fields_t *shm_ptr = NULL;
 char own_fifo_path[PATH_MAX];
 int fifo_filedes = -1;
 char hand[NR_CARDS / 2][CHARS_PER_CARD];
+int nr_cards_in_hand = 0;
 
 int main (int argc, char **argv) {
   
@@ -28,9 +29,9 @@ int main (int argc, char **argv) {
   initDefaultDeck();
   shuffleDeck();
   
-  initSharedMem(argv);
-  
   initFIFO(argv[1]);
+  
+  initSharedMem(argv);
   
   if (is_dealer) {
     pthread_t tid;
@@ -38,8 +39,9 @@ int main (int argc, char **argv) {
       perror("pthread_create()");
       exit(-1);
     }
-  } {
-    
+    pthread_join(tid, NULL);
+  } else {
+    receiveCards();
   }
   
   return 0;
@@ -121,6 +123,16 @@ void initSharedMem(char **args) {
     shm_ptr->players[0].number = 0;
     strcpy(shm_ptr->players[0].nickname, args[1]);
     strcpy(shm_ptr->players[0].fifo_path, own_fifo_path);
+    
+    //initialize shared mutexes and conditional variables
+    pthread_mutex_t *mptr;
+    startup_mutexattr_t mattr;
+    
+    mptr = shm_ptr->startup_mut;
+    pthread_mutexattr_init(&mattr);
+    pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
+    pthread_mutex_init(mptr, &mattr);
+    
   } else {
     if (atoi(args[3]) != shm_ptr->nr_players) {
       printf("Number of players different from the one saved!\n");
@@ -167,18 +179,73 @@ void shuffleDeck() {
 }
 
 void *giveCards(void *ptr) {
+  int card_index = NR_CARDS;
+  int player_index = 0;
+  int i = 0;
+  int nr_players = shm_ptr->nr_players;
+  players_info_t *players_ptr = shm_ptr->players;
+  int cards_per_player = NR_CARDS / nr_players;
+  
+  for (player_index = 0; player_index < nr_players; player_index++) {
+      int players_fifo;
+      if ((players_fifo = open(players_ptr[player_index].fifo_path, O_WRONLY)) == -1) {
+	perror("open()");
+	exit(-1);
+      }
+    for (i = 0; i < cards_per_player; i++) {
+      write(players_fifo, cards[card_index], 3);
+    }
+    
+    write(players_fifo, "\0", 1);
+    
+    if (close(players_fifo) == -1) {
+      perror("close()");
+      exit(-1);
+    }
+  }
+  
   return NULL;
 }
 
 void receiveCards() {
+  char card[3];
+  int hand_index = 0;
   
+  while(-1) {
+    ssize_t nr_chars_read;
+    if ((nr_chars_read = read(fifo_filedes, card, 4)) == 4) {
+      card[3] = '\0';
+      strcpy(hand[hand_index++], card);
+    } else {
+      if (card[0] == '\0') {
+	break;
+      }
+    }
+  }
+  
+  printf("Received cards\n");
+  
+  nr_cards_in_hand = hand_index;
+  
+  if (close(fifo_filedes) == -1) {
+    perror("close()");
+    exit(-1);
+  }
+  
+  if (unlink(own_fifo_path) == -1) {
+    perror("unlink()");
+    exit(-1);
+  }
+  
+  printf("nr cards: %d\n", nr_cards_in_hand);
+  
+  int a = 0;
+  for (; a < nr_cards_in_hand; a++) {
+    printf("%s\n", hand[a]);
+  }
 }
 
 void exitHandler(void) {
-  
-  // closes and deletes the own fifo
-  close(fifo_filedes);
-  unlink(own_fifo_path);
   
   // deatach from shared memory block
   shmdt(shm_ptr);
