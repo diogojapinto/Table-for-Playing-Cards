@@ -48,5 +48,7 @@ void waitForPlayers();
 void *playCard(void *ptr);
 void removeCardFromHand(int cardNumber);
 void addCardToTable(int cardNumber);
+void updatePlayersTurn();
+void displayRound();
 
 #endif

@@ -3,6 +3,15 @@
  * 
  * CHANGE TO POSIX THE SHARED MEMORY (but for now this works)
  * 
+ *  ctr+z when waiting for players keeps the game runnning
+ *
+ *  as funcoes que criei estao todas a seguir ao exit_handler.
+ *  criei um mutex novo na struct, iniciei na funcao init, e chamei o thread no main
+ *  ja da para jogar uma carta, remove a da mao adiciona a a mesa e escreve a round atual e a anterior
+ *  tambem atualiza o numero da round e a vez do jogador
+ *  Comecei a fazer o contador, falta passar o calculo para um formato legivel, e colocar
+ *  o codigo noutro sitio, onde esta so mostra quando o outro jogador termina a jogada.
+ *
  */
 
 #include "tpc.h"
@@ -358,6 +367,9 @@ void *playCard(void *ptr) {
   char number[2];
   int cardNumber;
   int play = -1;
+  int playing=0;
+  time_t delta = 0;
+  time_t delta1 = 0;
 
   printf("Cards in hand: %d\n", nr_cards_in_hand);
   
@@ -366,11 +378,14 @@ void *playCard(void *ptr) {
     printf("%d - %s\n", a, hand[a]);
   }
 
+
   while (play) {
     pthread_mutex_lock(&(shm_ptr->play_mut));
 
-    if (shm_ptr->turn_to_play == player_nr) {
-      
+    if (shm_ptr->turn_to_play == player_nr) {  
+
+      displayRound();
+
       printf("Insert card number: \n");
 
       tcgetattr(STDIN_FILENO, &oldterm);
@@ -388,6 +403,15 @@ void *playCard(void *ptr) {
       
       play = 0;
     }
+    else {
+      if (playing != shm_ptr->turn_to_play) {
+        playing = shm_ptr->turn_to_play;
+        time(&delta);
+      }
+
+      printf("Player %d round time: %d\n", playing, time(&delta1)-delta);
+
+    }
 
     pthread_mutex_unlock(&(shm_ptr->play_mut));   
   }
@@ -398,6 +422,8 @@ void *playCard(void *ptr) {
   addCardToTable(cardNumber);
 
   removeCardFromHand(cardNumber);
+
+  updatePlayersTurn();
 
   return NULL;
 }
@@ -426,4 +452,44 @@ void removeCardFromHand(int cardNumber) {
   }
   strcpy(hand[i],"0");
   nr_cards_in_hand--;
+}
+
+void updatePlayersTurn() {
+
+  pthread_mutex_lock(&(shm_ptr->play_mut));
+
+  if (shm_ptr->turn_to_play < shm_ptr->last_loggedin_player) {
+    shm_ptr->turn_to_play++;
+  }
+  else {
+   shm_ptr->turn_to_play = 0;
+   shm_ptr->round_number++; 
+ }
+
+ pthread_mutex_unlock(&(shm_ptr->play_mut));
+}
+
+void displayRound() {
+
+  int i =0;
+
+  if (shm_ptr->round_number != 0) {
+    printf("Last Round: ");
+    while(i<player_nr) {
+      printf("%s - ", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
+      i++;
+    }
+    printf("%s\n", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
+  }
+
+  i=0;
+  if (player_nr != 0)
+    printf("Cards this round: ");
+
+  while(i<player_nr-1) {
+    printf("%s - ", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
+    i++;
+  }
+  printf("%s\n", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
+
 }
