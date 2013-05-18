@@ -1,7 +1,7 @@
 /*
  * NOTES (things to add on the short future):
  * 
- * 
+ * CHANGE TO POSIX THE SHARED MEMORY (but for now this works)
  * 
  */
 
