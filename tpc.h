@@ -22,6 +22,7 @@ typedef struct {
 
 // structure to be allocated on the shared memory region
 typedef struct {
+  char tables_name[MAX_NICK_LENGTH];
   int nr_players;
   int dealer;
   int last_loggedin_player;
@@ -31,6 +32,7 @@ typedef struct {
   char cards_on_table[NR_CARDS][CHARS_PER_CARD];
   pthread_mutex_t startup_mut;
   pthread_cond_t startup_cond_var;
+  pthread_mutex_t deal_cards_mut[MAX_NR_PLAYERS];
 } shared_fields_t;
 
 int verifyCmdArgs(char **argv);
@@ -41,5 +43,6 @@ void initDefaultDeck();
 void shuffleDeck();
 void *giveCards(void *ptr);
 void receiveCards();
+void waitForPlayers();
 
 #endif

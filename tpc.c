@@ -1,3 +1,10 @@
+/*
+ * NOTES (things to add on the short future):
+ * 
+ * 
+ * 
+ */
+
 #include "tpc.h"
 
 int is_dealer = 0;
@@ -7,6 +14,7 @@ char own_fifo_path[PATH_MAX];
 int fifo_filedes = -1;
 char hand[NR_CARDS / 2][CHARS_PER_CARD];
 int nr_cards_in_hand = 0;
+int player_nr = 0;
 
 int main (int argc, char **argv) {
   
@@ -33,15 +41,20 @@ int main (int argc, char **argv) {
   
   initSharedMem(argv);
   
+  waitForPlayers();
+  
+  pthread_t tid;
+  
   if (is_dealer) {
-    pthread_t tid;
     if ((errno = pthread_create(&tid, NULL, giveCards, NULL)) != 0) {
       perror("pthread_create()");
       exit(-1);
     }
+  }
+  receiveCards();
+  
+  if (is_dealer) {
     pthread_join(tid, NULL);
-  } else {
-    receiveCards();
   }
   
   return 0;
@@ -58,9 +71,20 @@ int verifyCmdArgs(char **argv) {
     }
   }
   
-  if (strlen(argv[1]) > MAX_NICK_LENGTH) {
+  int players_name_size = strlen(argv[1]);
+  
+  if (players_name_size > MAX_NICK_LENGTH ) {
     printf("Invalid nickname dimension.\n");
     return -1;
+  }
+  
+  if (is_dealer) {
+    int tables_name_size = strlen(argv[2]);
+    
+    if (tables_name_size > MAX_NICK_LENGTH ) {
+      printf("Invalid table's name dimension.\n");
+      return -1;
+    }
   }
   
   int nr_players = atoi(argv[3]);
@@ -114,7 +138,18 @@ void initSharedMem(char **args) {
     exit(-1);
   }
   
+  //initialize the mutexes and condition variables attributes  
+  pthread_mutexattr_t mattr;
+  pthread_condattr_t cattr;
+  pthread_mutexattr_init(&mattr);
+  pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
+  pthread_condattr_init(&cattr);
+  pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED);
+  pthread_mutex_t *mptr;
+  pthread_cond_t *cptr;
+  
   if (is_dealer) {
+    strcpy(shm_ptr->tables_name, args[2]);
     shm_ptr->nr_players = atoi(args[3]);
     shm_ptr->dealer = 0;
     shm_ptr->last_loggedin_player = 0;
@@ -124,25 +159,46 @@ void initSharedMem(char **args) {
     strcpy(shm_ptr->players[0].nickname, args[1]);
     strcpy(shm_ptr->players[0].fifo_path, own_fifo_path);
     
-    //initialize shared mutexes and conditional variables
-    pthread_mutex_t *mptr;
-    startup_mutexattr_t mattr;
+    //initialize shared mutexes and conditional variables    
     
-    mptr = shm_ptr->startup_mut;
-    pthread_mutexattr_init(&mattr);
-    pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
-    pthread_mutex_init(mptr, &mattr);
+    mptr = &(shm_ptr->startup_mut);
+    if (pthread_mutex_init(mptr, &mattr) == -1) {
+      perror("pthread_mutex_init()");
+      exit(-1);
+    }
+    
+    mptr = &(shm_ptr->deal_cards_mut[0]);
+    if (pthread_mutex_init(mptr, &mattr) == -1) {
+      perror("pthread_mutex_init()");
+      exit(-1);
+    }
+    
+    cptr = &(shm_ptr->startup_cond_var);
+    if (pthread_cond_init(cptr, &cattr) == -1) {
+      perror("pthread_cond_init()");
+      exit(-1);
+    }
     
   } else {
     if (atoi(args[3]) != shm_ptr->nr_players) {
       printf("Number of players different from the one saved!\n");
       exit(-1);
     }
-    int player_nr = ++(shm_ptr->last_loggedin_player);
+    player_nr = ++(shm_ptr->last_loggedin_player);
     shm_ptr->players[player_nr].number = player_nr;
     strcpy(shm_ptr->players[player_nr].nickname, args[1]);
     strcpy(shm_ptr->players[player_nr].fifo_path, own_fifo_path);
+    
+    mptr = &(shm_ptr->deal_cards_mut[player_nr]);
+    if (pthread_mutex_init(mptr, &mattr) == -1) {
+      perror("pthread_mutex_init()");
+      exit(-1);
+    }
+    
+    pthread_cond_broadcast(&(shm_ptr->startup_cond_var));
   }
+  
+  printf("Player %s logged in with the index %d.\n", shm_ptr->players[shm_ptr->last_loggedin_player].nickname, shm_ptr->last_loggedin_player);
 }
 
 void initDefaultDeck() {
@@ -179,21 +235,27 @@ void shuffleDeck() {
 }
 
 void *giveCards(void *ptr) {
-  int card_index = NR_CARDS;
+  int card_index = NR_CARDS - 1;
   int player_index = 0;
   int i = 0;
   int nr_players = shm_ptr->nr_players;
   players_info_t *players_ptr = shm_ptr->players;
   int cards_per_player = NR_CARDS / nr_players;
   
+  printf("Giving cards\n");
+  
   for (player_index = 0; player_index < nr_players; player_index++) {
-      int players_fifo;
-      if ((players_fifo = open(players_ptr[player_index].fifo_path, O_WRONLY)) == -1) {
-	perror("open()");
-	exit(-1);
-      }
+    int players_fifo;
+    if ((players_fifo = open(players_ptr[player_index].fifo_path, O_WRONLY)) == -1) {
+      perror("open()");
+      exit(-1);
+    }
+    
+    pthread_mutex_lock(&(shm_ptr->deal_cards_mut[player_index]));
+    
     for (i = 0; i < cards_per_player; i++) {
-      write(players_fifo, cards[card_index], 3);
+      write(players_fifo, cards[card_index--], 3);
+      write(players_fifo, "\n", 1);
     }
     
     write(players_fifo, "\0", 1);
@@ -202,6 +264,8 @@ void *giveCards(void *ptr) {
       perror("close()");
       exit(-1);
     }
+    
+    pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_index]));
   }
   
   return NULL;
@@ -211,17 +275,22 @@ void receiveCards() {
   char card[3];
   int hand_index = 0;
   
-  while(-1) {
+  while(1) {
+    pthread_mutex_lock(&(shm_ptr->deal_cards_mut[player_nr]));
     ssize_t nr_chars_read;
     if ((nr_chars_read = read(fifo_filedes, card, 4)) == 4) {
       card[3] = '\0';
       strcpy(hand[hand_index++], card);
     } else {
-      if (card[0] == '\0') {
+      if (card[0] == '\0' && hand_index != 0) {
 	break;
       }
     }
+    pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
   }
+  
+  pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
+  pthread_mutex_destroy(&(shm_ptr->deal_cards_mut[player_nr]));
   
   printf("Received cards\n");
   
@@ -242,6 +311,22 @@ void receiveCards() {
   int a = 0;
   for (; a < nr_cards_in_hand; a++) {
     printf("%s\n", hand[a]);
+  }
+}
+
+void waitForPlayers() {
+  pthread_mutex_lock(&(shm_ptr->startup_mut));
+  while(shm_ptr->nr_players > shm_ptr->last_loggedin_player + 1) {
+    printf("Waiting for other players\n");
+    pthread_cond_wait(&(shm_ptr->startup_cond_var), &(shm_ptr->startup_mut));
+  }
+  printf("%s is complete.\nThe game may start.\nDealer is %s.\n", shm_ptr->tables_name, shm_ptr->players[shm_ptr->dealer].nickname);
+  pthread_mutex_unlock(&(shm_ptr->startup_mut));
+  
+  if (is_dealer) {
+    // destroy mutexes and condition variables
+    pthread_mutex_destroy(&(shm_ptr->startup_mut));
+    pthread_cond_destroy(&(shm_ptr->startup_cond_var));
   }
 }
 
