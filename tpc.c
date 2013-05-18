@@ -395,11 +395,24 @@ void *playCard(void *ptr) {
   cardNumber = atoi(number);
   printf("card played: %s\n", hand[cardNumber]);
 
+  addCardToTable(cardNumber);
+
   removeCardFromHand(cardNumber);
 
-  printf("Cards in hand: %d\n", nr_cards_in_hand);
-
   return NULL;
+}
+
+void addCardToTable(int cardNumber) {
+
+  pthread_mutex_lock(&(shm_ptr->play_mut));
+
+  int i = shm_ptr->round_number + player_nr;
+  strcpy(shm_ptr->cards_on_table[i], hand[cardNumber]);
+
+  printf("%s\n",shm_ptr->cards_on_table[i] );
+
+  pthread_mutex_unlock(&(shm_ptr->play_mut));
+
 }
 
 void removeCardFromHand(int cardNumber) {
