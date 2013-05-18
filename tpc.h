@@ -33,6 +33,7 @@ typedef struct {
   pthread_mutex_t startup_mut;
   pthread_cond_t startup_cond_var;
   pthread_mutex_t deal_cards_mut[MAX_NR_PLAYERS];
+  pthread_mutex_t play_mut;
 } shared_fields_t;
 
 int verifyCmdArgs(char **argv);
@@ -44,5 +45,7 @@ void shuffleDeck();
 void *giveCards(void *ptr);
 void receiveCards();
 void waitForPlayers();
+void *playCard(void *ptr);
+void removeCardFromHand(int cardNumber);
 
 #endif
