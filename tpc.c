@@ -368,66 +368,75 @@ void *playCard(void *ptr) {
   int cardNumber;
   int play = -1;
   int playing=0;
-  time_t delta = 0;
-  time_t delta1 = 0;
+  struct tm *delta;
+  time_t current_time;
+  int min, sec;
 
-  printf("Cards in hand: %d\n", nr_cards_in_hand);
-  
-  int a = 0;
-  for (; a < nr_cards_in_hand; a++) {
-    printf("%d - %s\n", a, hand[a]);
+  if (time(&current_time) == -1) {
+    perror("time()");
+    exit(-1);
   }
 
+  if ((delta = localtime(&current_time)) == NULL) {
+   perror("localtime()");
+   exit(-1);  
+ }
 
-  while (play) {
-    pthread_mutex_lock(&(shm_ptr->play_mut));
+ min = delta->tm_min;
+ sec = delta->tm_sec;
 
-    if (shm_ptr->turn_to_play == player_nr) {  
+ printf("Cards in hand: %d\n", nr_cards_in_hand);
 
-      displayRound();
+ int a = 0;
+ for (; a < nr_cards_in_hand; a++) {
+  printf("%d - %s\n", a, hand[a]);
+}
 
-      printf("Insert card number: \n");
 
-      tcgetattr(STDIN_FILENO, &oldterm);
-      term = oldterm;
-      term.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON);
-      tcsetattr(STDIN_FILENO, TCSAFLUSH, &term);
-      int i=0;
-      pthread_mutex_unlock(&(shm_ptr->play_mut)); 
+while (play) {
+  pthread_mutex_lock(&(shm_ptr->play_mut));
+
+  if (shm_ptr->turn_to_play == player_nr) {  
+
+    displayRound();
+
+    printf("Insert card number: \n");
+
+    tcgetattr(STDIN_FILENO, &oldterm);
+    term = oldterm;
+    term.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &term);
+    int i=0;
+    pthread_mutex_unlock(&(shm_ptr->play_mut)); 
+    read(STDIN_FILENO, &ch, 1);
+    while (ch != '\n') {
+      number[i] = ch;
+      i++;
       read(STDIN_FILENO, &ch, 1);
-      while (ch != '\n') {
-        number[i] = ch;
-        i++;
-        read(STDIN_FILENO, &ch, 1);
-      }
-      pthread_mutex_lock(&(shm_ptr->play_mut));
-      tcsetattr(STDIN_FILENO, TCSANOW, &oldterm);
-      
-      play = 0;
     }
-    else {
-      if (playing != shm_ptr->turn_to_play) {
-        playing = shm_ptr->turn_to_play;
-        time(&delta);
-      }
+    pthread_mutex_lock(&(shm_ptr->play_mut));
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldterm);
 
-      printf("\rPlayer %d round time: %d", playing, time(&delta1)-delta);
+    play = 0;
+  }
+  else {
 
-    }
-
-    pthread_mutex_unlock(&(shm_ptr->play_mut));   
+    turnTime(playing, min, sec);
   }
 
-  cardNumber = atoi(number);
-  printf("card played: %s\n", hand[cardNumber]);
+  pthread_mutex_unlock(&(shm_ptr->play_mut));   
+}
 
-  addCardToTable(cardNumber);
+cardNumber = atoi(number);
+printf("card played: %s\n", hand[cardNumber]);
 
-  removeCardFromHand(cardNumber);
+addCardToTable(cardNumber);
 
-  updatePlayersTurn();
+removeCardFromHand(cardNumber);
 
-  return NULL;
+updatePlayersTurn();
+
+return NULL;
 }
 
 void addCardToTable(int cardNumber) {
@@ -493,5 +502,36 @@ void displayRound() {
     i++;
   }
   printf("%s\n", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
+
+}
+
+void turnTime(int playing, int min, int sec) {
+
+  struct tm *current;
+  time_t current_time1;
+  int delmin, delsec;
+
+  if (time(&current_time1) == -1) {
+    perror("time()");
+    exit(-1);
+  }
+
+  if ((current = localtime(&current_time1)) == NULL) {
+   perror("localtime()");
+   exit(-1);     
+ }
+
+ if (playing != shm_ptr->turn_to_play) {
+  playing = shm_ptr->turn_to_play;
+  min = current->tm_min;
+  sec = current->tm_sec;
+  printf("\n");
+}
+
+delmin = current->tm_min - min;
+
+delsec = current->tm_sec - sec;
+
+printf("\rPlayer %d round time: %d:%d", playing, delmin, delsec);
 
 }
