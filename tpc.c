@@ -393,12 +393,14 @@ void *playCard(void *ptr) {
       term.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON);
       tcsetattr(STDIN_FILENO, TCSAFLUSH, &term);
       int i=0;
+      pthread_mutex_unlock(&(shm_ptr->play_mut)); 
       read(STDIN_FILENO, &ch, 1);
       while (ch != '\n') {
         number[i] = ch;
         i++;
         read(STDIN_FILENO, &ch, 1);
       }
+      pthread_mutex_lock(&(shm_ptr->play_mut));
       tcsetattr(STDIN_FILENO, TCSANOW, &oldterm);
       
       play = 0;
@@ -409,7 +411,7 @@ void *playCard(void *ptr) {
         time(&delta);
       }
 
-      printf("Player %d round time: %d\n", playing, time(&delta1)-delta);
+      printf("\rPlayer %d round time: %d", playing, time(&delta1)-delta);
 
     }
 
@@ -474,7 +476,7 @@ void displayRound() {
   int i =0;
 
   if (shm_ptr->round_number != 0) {
-    printf("Last Round: ");
+    printf("\nLast Round: ");
     while(i<player_nr) {
       printf("%s - ", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
       i++;
@@ -484,7 +486,7 @@ void displayRound() {
 
   i=0;
   if (player_nr != 0)
-    printf("Cards this round: ");
+    printf("\nCards this round: ");
 
   while(i<player_nr-1) {
     printf("%s - ", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
