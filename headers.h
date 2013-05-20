@@ -28,6 +28,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <termios.h>
+#include <signal.h>
 
 
 #endif

@@ -51,5 +51,7 @@ void addCardToTable(int cardNumber);
 void updatePlayersTurn();
 void displayRound();
 void turnTime(int playing, int min, int sec);
+void reorderHand();
+void blockSignals();
 
 #endif

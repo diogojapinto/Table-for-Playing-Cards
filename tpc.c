@@ -16,17 +16,17 @@
 
 #include "tpc.h"
 
- int is_dealer = 0;
- int shmid = 0;
- shared_fields_t *shm_ptr = NULL;
- char own_fifo_path[PATH_MAX];
- int fifo_filedes = -1;
- char hand[NR_CARDS / 2][CHARS_PER_CARD];
- int nr_cards_in_hand = 0;
- int player_nr = 0;
+int is_dealer = 0;
+int shmid = 0;
+shared_fields_t *shm_ptr = NULL;
+char own_fifo_path[PATH_MAX];
+int fifo_filedes = -1;
+char hand[NR_CARDS / 2][CHARS_PER_CARD];
+int nr_cards_in_hand = 0;
+int player_nr = 0;
 
- int main (int argc, char **argv) {
-
+int main (int argc, char **argv) {
+  
   // verifies if the number of arguments is correct
   if (argc != 4) {
     printf("usage: %s <player's name> <table's name> <nr. players>\n", argv[0]);
@@ -42,6 +42,8 @@
     perror("atexit()");
     exit(-1);
   }
+  
+  blockSignals();
   
   initDefaultDeck();
   shuffleDeck();
@@ -65,21 +67,21 @@
   if (is_dealer) {
     pthread_join(tid, NULL);
   }
-
+  
   pthread_t tidP;
-
+  
   if ((errno = pthread_create(&tidP, NULL, playCard, NULL)) != 0) {
     perror("pthread_create()");
     exit(-1);
   }
-
+  
   pthread_join(tidP, NULL);
   
   return 0;
 }
 
 int verifyCmdArgs(char **argv) {
-
+  
   // verifies if the 3rd arg is an integer
   char *c;
   for ( c = argv[3]; c != NULL && *c != '\0'; c++) {
@@ -117,7 +119,7 @@ int verifyCmdArgs(char **argv) {
 
 
 void initFIFO(char *name) {
-
+  
   // tries to create the FIFO
   mkfifo(name, S_IRUSR | S_IWUSR);
   
@@ -243,7 +245,7 @@ void initDefaultDeck() {
 }
 
 void shuffleDeck() {
-
+  
   srand(time(NULL));
   
   int nr_cycles = 200, i = 0;
@@ -307,28 +309,28 @@ void receiveCards() {
       strcpy(hand[hand_index++], card);
     } else {
       if (card[0] == '\0' && hand_index != 0) {
-       break;
-     }
-   }
-   pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
- }
-
- pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
- pthread_mutex_destroy(&(shm_ptr->deal_cards_mut[player_nr]));
-
- printf("Received cards\n");
-
- nr_cards_in_hand = hand_index;
-
- if (close(fifo_filedes) == -1) {
-  perror("close()");
-  exit(-1);
-}
-
-if (unlink(own_fifo_path) == -1) {
-  perror("unlink()");
-  exit(-1);
-}
+	break;
+      }
+    }
+    pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
+  }
+  
+  pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
+  pthread_mutex_destroy(&(shm_ptr->deal_cards_mut[player_nr]));
+  
+  printf("Received cards\n");
+  
+  nr_cards_in_hand = hand_index;
+  
+  if (close(fifo_filedes) == -1) {
+    perror("close()");
+    exit(-1);
+  }
+  
+  if (unlink(own_fifo_path) == -1) {
+    perror("unlink()");
+    exit(-1);
+  }
 }
 
 void waitForPlayers() {
@@ -348,7 +350,7 @@ void waitForPlayers() {
 }
 
 void exitHandler(void) {
-
+  
   // deatach from shared memory block
   shmdt(shm_ptr);
   
@@ -361,7 +363,7 @@ void exitHandler(void) {
 }
 
 void *playCard(void *ptr) {
-
+  
   struct termios term, oldterm;
   char ch;
   char number[2];
@@ -371,93 +373,93 @@ void *playCard(void *ptr) {
   struct tm *delta;
   time_t current_time;
   int min, sec;
-
+  
   if (time(&current_time) == -1) {
     perror("time()");
     exit(-1);
   }
-
+  
   if ((delta = localtime(&current_time)) == NULL) {
-   perror("localtime()");
-   exit(-1);  
- }
-
- min = delta->tm_min;
- sec = delta->tm_sec;
-
- printf("Cards in hand: %d\n", nr_cards_in_hand);
-
- int a = 0;
- for (; a < nr_cards_in_hand; a++) {
-  printf("%d - %s\n", a, hand[a]);
-}
-
-
-while (play) {
-  pthread_mutex_lock(&(shm_ptr->play_mut));
-
-  if (shm_ptr->turn_to_play == player_nr) {  
-
-    displayRound();
-
-    printf("Insert card number: \n");
-
-    tcgetattr(STDIN_FILENO, &oldterm);
-    term = oldterm;
-    term.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON);
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &term);
-    int i=0;
-    pthread_mutex_unlock(&(shm_ptr->play_mut)); 
-    read(STDIN_FILENO, &ch, 1);
-    while (ch != '\n') {
-      number[i] = ch;
-      i++;
-      read(STDIN_FILENO, &ch, 1);
-    }
+    perror("localtime()");
+    exit(-1);  
+  }
+  
+  min = delta->tm_min;
+  sec = delta->tm_sec;
+  
+  printf("Cards in hand: %d\n", nr_cards_in_hand);
+  
+  int a = 0;
+  for (; a < nr_cards_in_hand; a++) {
+    printf("%d - %s\n", a, hand[a]);
+  }
+  
+  
+  while (play) {
     pthread_mutex_lock(&(shm_ptr->play_mut));
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldterm);
-
-    play = 0;
+    
+    if (shm_ptr->turn_to_play == player_nr) {  
+      
+      displayRound();
+      
+      printf("Insert card number: \n");
+      
+      tcgetattr(STDIN_FILENO, &oldterm);
+      term = oldterm;
+      term.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON);
+      tcsetattr(STDIN_FILENO, TCSAFLUSH, &term);
+      int i=0;
+      pthread_mutex_unlock(&(shm_ptr->play_mut)); 
+      read(STDIN_FILENO, &ch, 1);
+      while (ch != '\n') {
+	number[i] = ch;
+	i++;
+	read(STDIN_FILENO, &ch, 1);
+      }
+      pthread_mutex_lock(&(shm_ptr->play_mut));
+      tcsetattr(STDIN_FILENO, TCSANOW, &oldterm);
+      
+      play = 0;
+    }
+    else {
+      
+      turnTime(playing, min, sec);
+    }
+    
+    pthread_mutex_unlock(&(shm_ptr->play_mut));   
   }
-  else {
-
-    turnTime(playing, min, sec);
-  }
-
-  pthread_mutex_unlock(&(shm_ptr->play_mut));   
-}
-
-cardNumber = atoi(number);
-printf("card played: %s\n", hand[cardNumber]);
-
-addCardToTable(cardNumber);
-
-removeCardFromHand(cardNumber);
-
-updatePlayersTurn();
-
-return NULL;
+  
+  cardNumber = atoi(number);
+  printf("card played: %s\n", hand[cardNumber]);
+  
+  addCardToTable(cardNumber);
+  
+  removeCardFromHand(cardNumber);
+  
+  updatePlayersTurn();
+  
+  return NULL;
 }
 
 void addCardToTable(int cardNumber) {
-
+  
   pthread_mutex_lock(&(shm_ptr->play_mut));
-
+  
   int i = shm_ptr->round_number + player_nr;
   strcpy(shm_ptr->cards_on_table[i], hand[cardNumber]);
-
+  
   printf("%s\n",shm_ptr->cards_on_table[i] );
-
+  
   pthread_mutex_unlock(&(shm_ptr->play_mut));
-
+  
 }
 
 void removeCardFromHand(int cardNumber) {
-
+  
   int i=cardNumber;
-
+  
   while (i<nr_cards_in_hand - 1) {
-
+    
     strcpy(hand[i],hand[i+1]);
     i++;
   }
@@ -466,24 +468,24 @@ void removeCardFromHand(int cardNumber) {
 }
 
 void updatePlayersTurn() {
-
+  
   pthread_mutex_lock(&(shm_ptr->play_mut));
-
+  
   if (shm_ptr->turn_to_play < shm_ptr->last_loggedin_player) {
     shm_ptr->turn_to_play++;
   }
   else {
-   shm_ptr->turn_to_play = 0;
-   shm_ptr->round_number++; 
- }
-
- pthread_mutex_unlock(&(shm_ptr->play_mut));
+    shm_ptr->turn_to_play = 0;
+    shm_ptr->round_number++; 
+  }
+  
+  pthread_mutex_unlock(&(shm_ptr->play_mut));
 }
 
 void displayRound() {
-
+  
   int i =0;
-
+  
   if (shm_ptr->round_number != 0) {
     printf("\nLast Round: ");
     while(i<player_nr) {
@@ -492,46 +494,79 @@ void displayRound() {
     }
     printf("%s\n", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
   }
-
+  
   i=0;
   if (player_nr != 0)
     printf("\nCards this round: ");
-
+  
   while(i<player_nr-1) {
     printf("%s - ", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
     i++;
   }
   printf("%s\n", shm_ptr->cards_on_table[shm_ptr->round_number+i]);
-
+  
 }
 
 void turnTime(int playing, int min, int sec) {
-
+  
   struct tm *current;
   time_t current_time1;
   int delmin, delsec;
-
+  
   if (time(&current_time1) == -1) {
     perror("time()");
     exit(-1);
   }
-
+  
   if ((current = localtime(&current_time1)) == NULL) {
-   perror("localtime()");
-   exit(-1);     
- }
-
- if (playing != shm_ptr->turn_to_play) {
-  playing = shm_ptr->turn_to_play;
-  min = current->tm_min;
-  sec = current->tm_sec;
-  printf("\n");
+    perror("localtime()");
+    exit(-1);     
+  }
+  
+  if (playing != shm_ptr->turn_to_play) {
+    playing = shm_ptr->turn_to_play;
+    min = current->tm_min;
+    sec = current->tm_sec;
+    printf("\n");
+  }
+  
+  delmin = current->tm_min - min;
+  
+  delsec = current->tm_sec - sec;
+  
+  printf("\rPlayer %d round time: %d:%d", playing, delmin, delsec);
 }
 
-delmin = current->tm_min - min;
+void blockSignals() {
+  sigset_t set;
+  sigfillset(&set);
+  if (sigprocmask(SIG_BLOCK, &set, NULL) == -1) {
+    perror("sigprocmask()");
+    exit(-1);
+  }
+}
 
-delsec = current->tm_sec - sec;
-
-printf("\rPlayer %d round time: %d:%d", playing, delmin, delsec);
-
+void reorderHand() {
+  int nr_suits = 4;
+  char order[] = {'c', 'h', 'd', 's'};
+  
+  int i = 0, j = 0;
+  
+  for {; i < nr_cards_in_hand; i++) {
+    for { j = i + 1; j < nr_cards_in_hand; j++) {
+      int first_index = 0, second_index = 0;
+      while(hand[i][2] != order[first_index]) {
+	first_index++;
+      }
+      while(hand[j][2] != order[second_index]) {
+	second_index++;
+      }
+      if (first_index > second_index) {
+	char[4] tmp;
+	strcpy(tmp, hand[j]);
+	strcpy(hand[j], hand[i]);
+	strcpy(hand[i], tmp);
+      }
+    }
+  }
 }
