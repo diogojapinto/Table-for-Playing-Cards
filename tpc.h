@@ -53,5 +53,6 @@ void displayRound();
 void turnTime(int playing, int min, int sec);
 void reorderHand();
 void blockSignals();
+void playGame();
 
 #endif

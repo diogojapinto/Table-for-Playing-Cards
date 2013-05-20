@@ -68,14 +68,7 @@ int main (int argc, char **argv) {
     pthread_join(tid, NULL);
   }
   
-  pthread_t tidP;
-  
-  if ((errno = pthread_create(&tidP, NULL, playCard, NULL)) != 0) {
-    perror("pthread_create()");
-    exit(-1);
-  }
-  
-  pthread_join(tidP, NULL);
+  playGame();
   
   return 0;
 }
@@ -389,6 +382,7 @@ void *playCard(void *ptr) {
   
   printf("Cards in hand: %d\n", nr_cards_in_hand);
   
+  reorderHand();
   int a = 0;
   for (; a < nr_cards_in_hand; a++) {
     printf("%d - %s\n", a, hand[a]);
@@ -463,7 +457,7 @@ void removeCardFromHand(int cardNumber) {
     strcpy(hand[i],hand[i+1]);
     i++;
   }
-  strcpy(hand[i],'\0');
+  strcpy(hand[i],"\0");
   nr_cards_in_hand--;
 }
 
@@ -547,13 +541,12 @@ void blockSignals() {
 }
 
 void reorderHand() {
-  int nr_suits = 4;
   char order[] = {'c', 'h', 'd', 's'};
   
   int i = 0, j = 0;
   
-  for {; i < nr_cards_in_hand; i++) {
-    for { j = i + 1; j < nr_cards_in_hand; j++) {
+  for (; i < nr_cards_in_hand; i++) {
+    for (j = i + 1; j < nr_cards_in_hand; j++) {
       int first_index = 0, second_index = 0;
       while(hand[i][2] != order[first_index]) {
 	first_index++;
@@ -562,11 +555,20 @@ void reorderHand() {
 	second_index++;
       }
       if (first_index > second_index) {
-	char[4] tmp;
+	char tmp[4];
 	strcpy(tmp, hand[j]);
 	strcpy(hand[j], hand[i]);
 	strcpy(hand[i], tmp);
       }
     }
   }
+}
+
+void playGame() {
+  if ((errno = pthread_create(&tid, NULL, playCard, NULL)) != 0) {
+    perror("pthread_create()");
+    exit(-1);
+  }
+  
+  pthread_join(tidP, NULL);
 }
