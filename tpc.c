@@ -461,7 +461,7 @@ void removeCardFromHand(int cardNumber) {
     strcpy(hand[i],hand[i+1]);
     i++;
   }
-  strcpy(hand[i],"0");
+  strcpy(hand[i],'\0');
   nr_cards_in_hand--;
 }
 
