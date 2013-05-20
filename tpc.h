@@ -51,9 +51,10 @@ void addCardToTable(int cardNumber);
 void updatePlayersTurn();
 void displayRound();
 void turnTime(int playing, int min, int sec);
-void reorderHand(char **cards);
+void reorderCardsList(char **cards);
 void blockSignals();
 void playGame();
-void printHand();
+void printCardsList(char **cards);
+void randomiseFirstPlayer();
 
 #endif
