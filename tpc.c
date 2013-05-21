@@ -69,8 +69,11 @@ int main (int argc, char **argv) {
     }
   }
   receiveCards();
+  printf("done1\n");
   reorderCardsList(hand);
+  printf("done2\n");
   printCardsList(hand);
+  printf("done3\n");
   if (is_dealer) {
     pthread_join(tid, NULL);
   }
@@ -240,9 +243,6 @@ void initDefaultDeck() {
       int curr_card = (i * ranks_nr) + j;
       strcpy(cards[curr_card], ranks[j]);
       strcat(cards[curr_card], suits[i]);
-      if (cards[3] == '\0') {
-	printf("dkdkjgfwoeihtgowihngvondbrgow3\n");
-      }
     }
   }
   strcpy(cards[NR_CARDS], "\0");
@@ -323,9 +323,6 @@ void receiveCards() {
   pthread_mutex_destroy(&(shm_ptr->deal_cards_mut[player_nr]));
   
   strcpy(hand[hand_index], "\0");
-  printf("Received cards\n");
-  printCardsList(hand);
-  
   nr_cards_in_hand = hand_index;
   
   if (close(fifo_filedes) == -1) {
@@ -368,6 +365,7 @@ void exitHandler(void) {
 }
 
 void *playCard(void *ptr) {
+  printf("play card init\n");
   struct termios term, oldterm;
   char ch;
   char number[2];
@@ -550,8 +548,9 @@ void reorderCardsList(char cards[][4]) {
   
   int i = 0, j = 0;
   
-  for (; cards[i] != NULL || strcmp(cards[i], "\0") != 0; i++) {
-    for (j = i + 1; cards[j] != NULL || strcmp(cards[j], "\0") != 0; j++) {
+  for (; cards[i] != NULL && strcmp(cards[i], "\0") != 0; i++) {
+    for (j = i + 1; cards[j] != NULL && strcmp(cards[j], "\0") != 0; j++) {
+      printf("i: %d | j: %d\n", i, j);
       int first_index = 0, second_index = 0;
       while(cards[i][2] != order[first_index]) {
 	first_index++;
@@ -571,13 +570,13 @@ void reorderCardsList(char cards[][4]) {
 
 void playGame() {
   pthread_t tid;
-  /*
+  
   if ((errno = pthread_create(&tid, NULL, playCard, NULL)) != 0) {
     perror("pthread_create()");
     exit(-1);
   }
   
-  pthread_join(tid, NULL);*/
+  pthread_join(tid, NULL);
 }
 
 void printCardsList(char cards[][4]) {
@@ -588,12 +587,15 @@ void printCardsList(char cards[][4]) {
   n = cards[0][2];
   for (; cards[a] != NULL && strcmp(cards[a], "\0") != 0; a++) {
     if (cards[a][2] == n) {
-      if (cards[a+1][2] != n){
-	printf("%s / ", cards[a]);
-	n = cards[a+1][2];
-      }
-      else {
-	printf("%s - ", cards[a]);
+      printf("%s", cards[a]);
+      if (cards[a + 1] != NULL && strcmp(cards[a + 1], "\0")) {
+	if (cards[a+1][2] != n){
+	  printf(" / ");
+	  n = cards[a+1][2];
+	}
+	else {
+	  printf(" - ");
+	}
       }
     }
   }
