@@ -27,6 +27,7 @@ typedef struct {
   int dealer;
   int last_loggedin_player;
   int turn_to_play;
+  int first_player;
   int round_number;
   players_info_t players[MAX_NR_PLAYERS];
   char cards_on_table[NR_CARDS][CHARS_PER_CARD];
@@ -34,6 +35,7 @@ typedef struct {
   pthread_cond_t startup_cond_var;
   pthread_mutex_t deal_cards_mut[MAX_NR_PLAYERS];
   pthread_mutex_t play_mut;
+  pthread_cond_t play_cond_var;
 } shared_fields_t;
 
 int verifyCmdArgs(char **argv);
@@ -53,8 +55,9 @@ void displayRound();
 void turnTime(int playing, int min, int sec);
 void reorderCardsList(char cards[][4]);
 void blockSignals();
-void playGame();
+void *playGame(void *ptr);
 void printCardsList(char cards[][4]);
 void randomiseFirstPlayer();
+void callFirstPlayer();
 
 #endif
