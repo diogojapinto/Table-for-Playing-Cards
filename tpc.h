@@ -10,7 +10,7 @@
 #define CHARS_PER_CARD 4
 
 // array to hold the ordered deck of cards
-char cards[NR_CARDS][CHARS_PER_CARD];
+char cards[NR_CARDS + 1][CHARS_PER_CARD];
 
 // structure to hold each player's info
 typedef struct {
@@ -51,10 +51,10 @@ void addCardToTable(int cardNumber);
 void updatePlayersTurn();
 void displayRound();
 void turnTime(int playing, int min, int sec);
-void reorderCardsList(char **cards);
+void reorderCardsList(char cards[][4]);
 void blockSignals();
 void playGame();
-void printCardsList(char **cards);
+void printCardsList(char cards[][4]);
 void randomiseFirstPlayer();
 
 #endif

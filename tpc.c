@@ -13,7 +13,7 @@
  */
 
 #include "tpc.h"
-
+//#define CLEAR
 int is_dealer = 0;
 int shmid = 0;
 shared_fields_t *shm_ptr = NULL;
@@ -22,9 +22,14 @@ int fifo_filedes = -1;
 char hand[NR_CARDS / 2][CHARS_PER_CARD];
 int nr_cards_in_hand = 0;
 int player_nr = 0;
+char table_path[PATH_MAX];
 
 int main (int argc, char **argv) {
-  
+#ifdef CLEAR
+  strcpy(table_path, argv[0]);
+  strcat(table_path, argv[2]);
+  shm_unlink(table_path);
+#else
   // verifies if the number of arguments is correct
   if (argc != 4) {
     printf("usage: %s <player's name> <table's name> <nr. players>\n", argv[0]);
@@ -54,6 +59,7 @@ int main (int argc, char **argv) {
   if (is_dealer) {
     
     initDefaultDeck();
+    printCardsList(cards);
     shuffleDeck();
     randomiseFirstPlayer();
     
@@ -63,14 +69,14 @@ int main (int argc, char **argv) {
     }
   }
   receiveCards();
-  reorderCardsList((char **)hand);
-  
+  reorderCardsList(hand);
+  printCardsList(hand);
   if (is_dealer) {
     pthread_join(tid, NULL);
   }
   
   playGame();
-  
+#endif
   return 0;
 }
 
@@ -107,7 +113,6 @@ int verifyCmdArgs(char **argv) {
     return -1;
   }
   
-  // if successfull:
   return 0;
 }
 
@@ -128,27 +133,28 @@ void initFIFO(char *name) {
 }
 
 void initSharedMem(char **args) {
-  key_t shm_key;
-  char* exec_path = args[0];
+  int shm_fd;
+  strcpy(table_path, args[0]);
+  strcat(table_path, args[2]);
   
-  // obtain an exclusive key for the application
-  shm_key = ftok(exec_path, 0);
-  
-  // tries to create the shared block of memory
-  if ((shmid = shmget(shm_key, sizeof(shared_fields_t), IPC_CREAT | IPC_EXCL | SHM_W | SHM_R)) == -1) {
+  if ((shm_fd = shm_open(table_path, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1) {
     // if it wasn't successfull, test if it already existed
-    if ((shmid = shmget(shm_key, 0, 0)) == -1) {
-      perror("shmget()");
+    if ((shm_fd = shm_open(table_path, O_RDWR, 0600)) == -1) {
+      perror("shm_open()");
       exit(-1);
     }
     is_dealer = 0;
   } else {
     is_dealer = -1;
+    
+    if (ftruncate(shm_fd, sizeof(shared_fields_t)) == -1) {
+      perror("ftruncate()");
+      exit(-1);
+    }
   }
   
-  // attack this process to the shared memory block
-  if ((shm_ptr = (shared_fields_t *) shmat(shmid, NULL, 0)) == (void *) -1) {
-    perror("shmat()");
+  if ((shm_ptr = (shared_fields_t *)mmap(0, sizeof(shared_fields_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0)) == NULL) {
+    perror("mmap");
     exit(-1);
   }
   
@@ -234,8 +240,12 @@ void initDefaultDeck() {
       int curr_card = (i * ranks_nr) + j;
       strcpy(cards[curr_card], ranks[j]);
       strcat(cards[curr_card], suits[i]);
+      if (cards[3] == '\0') {
+	printf("dkdkjgfwoeihtgowihngvondbrgow3\n");
+      }
     }
   }
+  strcpy(cards[NR_CARDS], "\0");
 }
 
 void shuffleDeck() {
@@ -292,13 +302,13 @@ void *giveCards(void *ptr) {
 }
 
 void receiveCards() {
-  char card[3];
+  char card[CHARS_PER_CARD];
   int hand_index = 0;
   
   while(1) {
     pthread_mutex_lock(&(shm_ptr->deal_cards_mut[player_nr]));
     ssize_t nr_chars_read;
-    if ((nr_chars_read = read(fifo_filedes, card, 4)) == 4) {
+    if ((nr_chars_read = read(fifo_filedes, card, CHARS_PER_CARD)) == CHARS_PER_CARD) {
       card[3] = '\0';
       strcpy(hand[hand_index++], card);
     } else {
@@ -312,7 +322,9 @@ void receiveCards() {
   pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
   pthread_mutex_destroy(&(shm_ptr->deal_cards_mut[player_nr]));
   
+  strcpy(hand[hand_index], "\0");
   printf("Received cards\n");
+  printCardsList(hand);
   
   nr_cards_in_hand = hand_index;
   
@@ -345,19 +357,17 @@ void waitForPlayers() {
 
 void exitHandler(void) {
   
-  // deatach from shared memory block
-  shmdt(shm_ptr);
+  munmap(shm_ptr, sizeof(shared_fields_t));
   
   // by convention, the dealer frees the shared memory block
   if (is_dealer) {
-    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
-      perror("shmctl()");
+    if (shm_unlink(table_path) == -1) {
+      perror("shm_unlink()");
     }
   }
 }
 
 void *playCard(void *ptr) {
-  
   struct termios term, oldterm;
   char ch;
   char number[2];
@@ -383,7 +393,7 @@ void *playCard(void *ptr) {
   
   printf("Cards in hand: %d\n", nr_cards_in_hand);
   
-  printCardsList((char **)hand);
+  printCardsList(hand);
   
   while (play) {
     pthread_mutex_lock(&(shm_ptr->play_mut));
@@ -427,7 +437,6 @@ void *playCard(void *ptr) {
   removeCardFromHand(cardNumber);
   
   updatePlayersTurn();
-  
   return NULL;
 }
 
@@ -536,13 +545,13 @@ void blockSignals() {
   }
 }
 
-void reorderCardsList(char **cards) {
+void reorderCardsList(char cards[][4]) {
   char order[] = {'c', 'h', 'd', 's'};
   
   int i = 0, j = 0;
   
   for (; cards[i] != NULL || strcmp(cards[i], "\0") != 0; i++) {
-    for (j = i + 1; j < nr_cards_in_hand; j++) {
+    for (j = i + 1; cards[j] != NULL || strcmp(cards[j], "\0") != 0; j++) {
       int first_index = 0, second_index = 0;
       while(cards[i][2] != order[first_index]) {
 	first_index++;
@@ -562,53 +571,31 @@ void reorderCardsList(char **cards) {
 
 void playGame() {
   pthread_t tid;
-  
+  /*
   if ((errno = pthread_create(&tid, NULL, playCard, NULL)) != 0) {
     perror("pthread_create()");
     exit(-1);
   }
   
-  pthread_join(tid, NULL);
+  pthread_join(tid, NULL);*/
 }
 
-void printCardsList(char **cards) {
+void printCardsList(char cards[][4]) {
   
   char n;
   
   int a = 0;
-  int i = 1;
-  n = cards[a][2];
+  n = cards[0][2];
   for (; cards[a] != NULL && strcmp(cards[a], "\0") != 0; a++) {
-    
     if (cards[a][2] == n) {
       if (cards[a+1][2] != n){
 	printf("%s / ", cards[a]);
-	i++;
+	n = cards[a+1][2];
       }
       else {
 	printf("%s - ", cards[a]);
-	i++;
       }
-      
     }
-    else {
-      n = cards[a][2];
-      printf("\n");
-      while (a-i < a - 1) {
-	printf("%3d - ", a-i);
-	i--;
-      }
-      printf("%3d / ", a-i);
-      i--;
-      printf("\n%s - ",cards[a]);
-      i++;
-    }
-  }
-  
-  printf("\n");
-  while (a-i < a) {
-    printf("%3d - ", a-i);
-    i--;
   }
   printf("\n");
 }

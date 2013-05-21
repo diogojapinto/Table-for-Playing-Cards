@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <termios.h>
 #include <signal.h>
+#include <fcntl.h>
 
 
 #endif
