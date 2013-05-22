@@ -8,6 +8,21 @@
 #define MAX_NICK_LENGTH 21
 #define NR_CARDS 52
 #define CHARS_PER_CARD 4
+#define LINE_SIZE 200
+
+/*
+ * event's strings
+ */
+#define DEAL_EVENT "deal"
+#define RECEIVE_CARDS_EVENT "receive_cards"
+#define PLAY_EVENT "play"
+#define HAND_EVENT "hand"
+
+typedef struct {
+  char who[LINE_SIZE];
+  char what[LINE_SIZE];
+  char result[LINE_SIZE];
+} print_info_t;
 
 // array to hold the ordered deck of cards
 char cards[NR_CARDS + 1][CHARS_PER_CARD];
@@ -44,7 +59,7 @@ void initSharedMem(char **args);
 void exitHandler(void);
 void initDefaultDeck();
 void shuffleDeck();
-void *giveCards(void *ptr);
+void *dealCards(void *ptr);
 void receiveCards();
 void waitForPlayers();
 void *playCard(void *ptr);
@@ -59,7 +74,8 @@ void *playGame(void *ptr);
 void printCardsList(char cards[][4]);
 void randomiseFirstPlayer();
 void callFirstPlayer();
-void *writeEventToLog(char *who, char *what, char *result);
 int searchCard(char card[4], int i);
+void *writeEventToLog(void *info_ptr);
+void randomiseFirstPlayer();
 
 #endif

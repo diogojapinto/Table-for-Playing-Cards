@@ -63,7 +63,7 @@
     shuffleDeck();
     randomiseFirstPlayer();
     
-    if ((errno = pthread_create(&tid, NULL, giveCards, NULL)) != 0) {
+    if ((errno = pthread_create(&tid, NULL, dealCards, NULL)) != 0) {
       perror("pthread_create()");
       exit(-1);
     }
@@ -279,7 +279,7 @@ void shuffleDeck() {
   }
 }
 
-void *giveCards(void *ptr) {
+void *dealCards(void *ptr) {
   int card_index = NR_CARDS - 1;
   int player_index = 0;
   int i = 0;
@@ -665,6 +665,29 @@ void randomiseFirstPlayer() {
   shm_ptr->first_player = shm_ptr->turn_to_play;
 }
 
-void *writeEventToLog(char *who, char *what, char *result) {
+void *writeHeaderToLog(void ptr) {
+  int log_fd;
+  if ((log_fd = open(tables_name, O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1) {
+    perror("open()");
+    exit(-1);
+  }
+  char header[LINE_SIZE];
+  int nr_chars = sprintf(header, "%20s | %20s |%20s |%20s", "when", "who", "what", "result");
+  write(log_fd, header, nr_chars);
+  close(log_fd);
+  return NULL;
+}
 
+void *writeEventToLog(void *info_ptr) {
+  print_info_t *info = (print_info_t *)info_ptr;
+  int log_fd;
+  if ((log_fd = open(tables_name, O_WRONLY | O_CREATC | O_APPEND, 0600)) == -1) {
+    perror("open()");
+    exit(-1);
+  }
+  char header[LINE_SIZE];
+  int nr_chars = sprintf(header, "%20s | %20s |%20s |%140s", info->when, info->who, info->what, info->result);
+  write(log_fd, header, nr_chars);
+  close(log_fd);
+  return NULL;
 }
