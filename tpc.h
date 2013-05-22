@@ -60,5 +60,6 @@ void printCardsList(char cards[][4]);
 void randomiseFirstPlayer();
 void callFirstPlayer();
 void *writeEventToLog(char *who, char *what, char *result);
+int searchCard(char card[4], int i);
 
 #endif
