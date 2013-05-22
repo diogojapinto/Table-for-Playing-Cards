@@ -482,7 +482,7 @@ void updatePlayersTurn() {
     shm_ptr->round_number++;
   }
 
-  pthread_cond_signal(&(shm_ptr->play_cond_var));
+  pthread_cond_broadcast(&(shm_ptr->play_cond_var));
   
   pthread_mutex_unlock(&(shm_ptr->play_mut));
 }
@@ -577,28 +577,28 @@ void reorderCardsList(char cards[][4]) {
 
 void *playGame(void *ptr) {
   pthread_t tidP;
-
-  pthread_mutex_lock(&(shm_ptr->play_mut));
-
+  
+  
   while (1) {
-
+    pthread_mutex_lock(&(shm_ptr->play_mut));
+    
     if (shm_ptr->turn_to_play != player_nr) {
       displayRound();
       pthread_cond_wait(&(shm_ptr->play_cond_var), &(shm_ptr->play_mut));
     }
     else {
       printf("Cards in hand: %d\n", nr_cards_in_hand);
-
+      
       printCardsList(hand);
-
+      
       if ((errno = pthread_create(&tidP, NULL, playCard, NULL)) != 0) {
-       perror("pthread_create()");
-       exit(-1);
-     }
-
-     pthread_cond_wait(&(shm_ptr->play_cond_var), &(shm_ptr->play_mut));
-   }
-
+	perror("pthread_create()");
+	exit(-1);
+      }
+      
+      pthread_cond_wait(&(shm_ptr->play_cond_var), &(shm_ptr->play_mut));
+    }
+    
  }
 
 
@@ -634,8 +634,12 @@ void printCardsList(char cards[][4]) {
 
 
 void randomiseFirstPlayer() {
+  /*
   srand(time(NULL));
   shm_ptr->turn_to_play = rand() % shm_ptr->nr_players;
   shm_ptr->first_player = shm_ptr->turn_to_play;
   printf("%d\n", shm_ptr->first_player);
+  */
+  shm_ptr->turn_to_play = 1;
+  shm_ptr->first_player = shm_ptr->turn_to_play;
 }
