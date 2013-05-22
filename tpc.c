@@ -309,6 +309,12 @@ void *dealCards(void *ptr) {
       perror("close()");
       exit(-1);
     }
+
+    pthread_t tid;
+    if ((errno = pthread_create(&tid, NULL, writeHeaderToLog, NULL)) != 0) {
+      perror("pthread_create()");
+      exit(-1);
+    }
     
     pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_index]));
   }
@@ -402,10 +408,13 @@ void *playCard(void *ptr) {
   min = delta->tm_min;
   sec = delta->tm_sec;
   
-  printf("Insert card: \n");
+  
   
   int i=0;
   while (1) {
+
+    printf("Insert card: \n");
+
     while (read(STDIN_FILENO, &ch, 1) == 1) {
       if (ch != '\n') {
         chosen_card[i] = ch;
@@ -665,23 +674,33 @@ void randomiseFirstPlayer() {
   shm_ptr->first_player = shm_ptr->turn_to_play;
 }
 
-void *writeHeaderToLog(void ptr) {
+void *writeHeaderToLog(void *ptr) {
   int log_fd;
-  if ((log_fd = open(tables_name, O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1) {
+
+  pthread_t tid = pthread_self();
+
+  if (pthread_detach(tid) != 0) {
+    perror("pthread_detach()");
+    exit(-1);
+  }
+
+  if ((log_fd = open(shm_ptr->tables_name, O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1) {
     perror("open()");
     exit(-1);
   }
   char header[LINE_SIZE];
-  int nr_chars = sprintf(header, "%20s | %20s |%20s |%20s", "when", "who", "what", "result");
+  int nr_chars = sprintf(header, "%20s |%20s |%20s |%20s", "when", "who", "what", "result");
   write(log_fd, header, nr_chars);
   close(log_fd);
+
+  free(ptr);
   return NULL;
 }
 
 void *writeEventToLog(void *info_ptr) {
   print_info_t *info = (print_info_t *)info_ptr;
   int log_fd;
-  if ((log_fd = open(tables_name, O_WRONLY | O_CREATC | O_APPEND, 0600)) == -1) {
+  if ((log_fd = open(shm_ptr->tables_name, O_WRONLY | O_APPEND, 0600)) == -1) {
     perror("open()");
     exit(-1);
   }

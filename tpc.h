@@ -22,6 +22,7 @@ typedef struct {
   char who[LINE_SIZE];
   char what[LINE_SIZE];
   char result[LINE_SIZE];
+  char when[LINE_SIZE];
 } print_info_t;
 
 // array to hold the ordered deck of cards
@@ -75,6 +76,7 @@ void printCardsList(char cards[][4]);
 void randomiseFirstPlayer();
 void callFirstPlayer();
 int searchCard(char card[4], int i);
+void *writeHeaderToLog(void *ptr);
 void *writeEventToLog(void *info_ptr);
 void randomiseFirstPlayer();
 
