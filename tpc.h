@@ -17,7 +17,6 @@ typedef struct {
   int number;
   char nickname[MAX_NICK_LENGTH];
   char fifo_path[PATH_MAX];
-  
 } players_info_t;
 
 // structure to be allocated on the shared memory region
