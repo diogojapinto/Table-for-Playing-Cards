@@ -35,6 +35,7 @@ typedef struct {
   pthread_mutex_t deal_cards_mut[MAX_NR_PLAYERS];
   pthread_mutex_t play_mut;
   pthread_cond_t play_cond_var;
+  int game_ended;
 } shared_fields_t;
 
 int verifyCmdArgs(char **argv);
@@ -58,5 +59,6 @@ void *playGame(void *ptr);
 void printCardsList(char cards[][4]);
 void randomiseFirstPlayer();
 void callFirstPlayer();
+void *writeEventToLog(char *who, char *what, char *result);
 
 #endif
