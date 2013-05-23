@@ -23,6 +23,7 @@
  int nr_cards_in_hand = 0;
  int player_nr = 0;
  char table_path[PATH_MAX];
+ char log_name[LINE_SIZE];
 
  int main (int argc, char **argv) {
   #ifdef CLEAR
@@ -676,6 +677,7 @@ void randomiseFirstPlayer() {
 
 void *writeHeaderToLog(void *ptr) {
   int log_fd;
+  char slash = '|';
 
   pthread_t tid = pthread_self();
 
@@ -684,12 +686,15 @@ void *writeHeaderToLog(void *ptr) {
     exit(-1);
   }
 
-  if ((log_fd = open(shm_ptr->tables_name, O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1) {
+  strcpy(log_name, shm_ptr->tables_name);
+  strcat(log_name, ".log");
+
+  if ((log_fd = open(log_name, O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1) {
     perror("open()");
     exit(-1);
   }
   char header[LINE_SIZE];
-  int nr_chars = sprintf(header, "%20s |%20s |%20s |%20s", "when", "who", "what", "result");
+  int nr_chars = sprintf(header, "%s %20c%s %20c%s %20c%s", "when", slash,"who",slash, "what",slash,"result");
   write(log_fd, header, nr_chars);
   close(log_fd);
 
@@ -700,13 +705,23 @@ void *writeHeaderToLog(void *ptr) {
 void *writeEventToLog(void *info_ptr) {
   print_info_t *info = (print_info_t *)info_ptr;
   int log_fd;
+  char slash = '|';
+
+  pthread_t tid = pthread_self();
+
+  if (pthread_detach(tid) != 0) {
+    perror("pthread_detach()");
+    exit(-1);
+  }
+
   if ((log_fd = open(shm_ptr->tables_name, O_WRONLY | O_APPEND, 0600)) == -1) {
     perror("open()");
     exit(-1);
   }
   char header[LINE_SIZE];
-  int nr_chars = sprintf(header, "%20s | %20s |%20s |%140s", info->when, info->who, info->what, info->result);
+  int nr_chars = sprintf(header, "%s %20c%s %20c%s %20c%s", info->when, slash, info->who, slash, info->what, slash, info->result);
   write(log_fd, header, nr_chars);
   close(log_fd);
+  free(info_ptr);
   return NULL;
 }
