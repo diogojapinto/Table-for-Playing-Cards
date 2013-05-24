@@ -22,7 +22,6 @@ typedef struct {
   char who[LINE_SIZE];
   char what[LINE_SIZE];
   char result[LINE_SIZE];
-  char when[LINE_SIZE];
 } print_info_t;
 
 // array to hold the ordered deck of cards
@@ -51,6 +50,7 @@ typedef struct {
   pthread_mutex_t deal_cards_mut[MAX_NR_PLAYERS];
   pthread_mutex_t play_mut;
   pthread_cond_t play_cond_var;
+  pthread_mutex_t log_mut;
   int game_ended;
 } shared_fields_t;
 

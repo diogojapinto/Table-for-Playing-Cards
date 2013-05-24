@@ -24,6 +24,7 @@
  int player_nr = 0;
  char table_path[PATH_MAX];
  char log_name[LINE_SIZE];
+ print_info_t *print_struct = NULL;
 
  int main (int argc, char **argv) {
   #ifdef CLEAR
@@ -54,6 +55,8 @@
   initSharedMem(argv);
   
   waitForPlayers();
+
+  print_struct = malloc(sizeof(print_info_t));
   
   pthread_t tid;
   
@@ -212,6 +215,13 @@ if (is_dealer) {
     exit(-1);
   }
 
+  
+  mptr = &(shm_ptr->log_mut);
+  if (pthread_mutex_init(mptr, &mattr) == -1) {
+    perror("pthread_mutex_init()");
+    exit(-1);
+  }
+
   cptr = &(shm_ptr->startup_cond_var);
   if (pthread_cond_init(cptr, &cattr) == -1) {
     perror("pthread_cond_init()");
@@ -310,16 +320,26 @@ void *dealCards(void *ptr) {
       perror("close()");
       exit(-1);
     }
-
-    pthread_t tid;
-    if ((errno = pthread_create(&tid, NULL, writeHeaderToLog, NULL)) != 0) {
-      perror("pthread_create()");
-      exit(-1);
-    }
     
     pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_index]));
   }
+
+  pthread_t tid;
+  if ((errno = pthread_create(&tid, NULL, writeHeaderToLog, NULL)) != 0) {
+    perror("pthread_create()");
+    exit(-1);
+  }
   
+  strcpy(print_struct->who, shm_ptr->players[0].nickname);
+  strcpy(print_struct->what, DEAL_EVENT);
+  strcpy(print_struct->result, "-");
+
+  pthread_t tidP;
+  if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
+    perror("pthread_create()");
+    exit(-1);
+  }
+
   return NULL;
 }
 
@@ -679,6 +699,9 @@ void *writeHeaderToLog(void *ptr) {
   int log_fd;
   char slash = '|';
 
+
+  pthread_mutex_lock(&(shm_ptr->log_mut));
+
   pthread_t tid = pthread_self();
 
   if (pthread_detach(tid) != 0) {
@@ -698,6 +721,9 @@ void *writeHeaderToLog(void *ptr) {
   write(log_fd, header, nr_chars);
   close(log_fd);
 
+  printf("a\n");
+  pthread_mutex_unlock(&(shm_ptr->log_mut));
+
   free(ptr);
   return NULL;
 }
@@ -707,6 +733,8 @@ void *writeEventToLog(void *info_ptr) {
   int log_fd;
   char slash = '|';
 
+  pthread_mutex_lock(&(shm_ptr->log_mut));
+
   pthread_t tid = pthread_self();
 
   if (pthread_detach(tid) != 0) {
@@ -714,14 +742,27 @@ void *writeEventToLog(void *info_ptr) {
     exit(-1);
   }
 
-  if ((log_fd = open(shm_ptr->tables_name, O_WRONLY | O_APPEND, 0600)) == -1) {
+
+  printf("b\n");
+
+  if ((log_fd = open(log_name, O_WRONLY | O_APPEND, 0600)) == -1) {
     perror("open()");
     exit(-1);
   }
+
   char header[LINE_SIZE];
-  int nr_chars = sprintf(header, "%s %20c%s %20c%s %20c%s", info->when, slash, info->who, slash, info->what, slash, info->result);
+  
+  char when[] = "time";
+
+
+  int nr_chars = sprintf(header, "\n%s %20c%s %20c%s %20c%s", when, slash, info->who, slash, info->what, slash, info->result);
   write(log_fd, header, nr_chars);
   close(log_fd);
+
+  printf("fim escrita'\n");
+
+  pthread_mutex_unlock(&(shm_ptr->log_mut));
+
   free(info_ptr);
   return NULL;
 }
