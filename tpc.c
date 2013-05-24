@@ -366,6 +366,9 @@ void receiveCards() {
    pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
  }
 
+ strcpy(log_name, shm_ptr->tables_name);
+ strcat(log_name, ".log");
+
  pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
  pthread_mutex_destroy(&(shm_ptr->deal_cards_mut[player_nr]));
 
@@ -446,6 +449,19 @@ void *playCard(void *ptr) {
 }
 
 printf("card played: %s\n", hand[cardNumber]);
+
+print_info_t *print_struct = malloc(sizeof(print_info_t));
+
+strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
+strcpy(print_struct->what, PLAY_EVENT);
+
+strcpy(print_struct->result, hand[cardNumber]);
+
+pthread_t tidP;
+if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
+  perror("pthread_create()");
+  exit(-1);
+}
 
 addCardToTable(cardNumber);
 
@@ -614,22 +630,14 @@ void reorderCardsList(char cards[][4]) {
 
  print_info_t *print_struct = malloc(sizeof(print_info_t));
 
- printf("ola\n");
-
  strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
- printf("ACEDEU\n");
  strcpy(print_struct->what, RECEIVE_CARDS_EVENT);
- printf("Event\n");
 
  char curr_hand[LINE_SIZE];
 
  printCardsList(hand, curr_hand);
 
  strcpy(print_struct->result, curr_hand);
-
-
- printf("ola\n");
-//Ola Wilson
 
  pthread_t tidP;
  if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
@@ -661,9 +669,26 @@ void *playGame(void *ptr) {
      }
 
      pthread_cond_wait(&(shm_ptr->play_cond_var), &(shm_ptr->play_mut));
-   }
 
-   if (shm_ptr->game_ended) {
+     print_info_t *print_struct = malloc(sizeof(print_info_t));
+
+     strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
+     strcpy(print_struct->what, HAND_EVENT);
+
+     char curr_hand[LINE_SIZE];
+
+     printCardsList(hand, curr_hand);
+
+     strcpy(print_struct->result, curr_hand);
+
+     pthread_t tidP;
+     if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
+      perror("pthread_create()");
+      exit(-1);
+    }
+  }
+
+  if (shm_ptr->game_ended) {
     printf("Game has ended!");
     pthread_mutex_unlock(&(shm_ptr->play_mut));
     return NULL;
