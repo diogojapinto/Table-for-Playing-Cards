@@ -68,7 +68,7 @@ void removeCardFromHand(int cardNumber);
 void addCardToTable(int cardNumber);
 void updatePlayersTurn();
 void displayRound();
-void turnTime(int playing, int min, int sec);
+void *turnTime(void *ptr);
 void reorderCardsList(char cards[][4]);
 void blockSignals();
 void *playGame(void *ptr);
@@ -83,5 +83,6 @@ void callHandEvent();
 void callDealEvent();
 void callReceiveEvent();
 void callPlayEvent(int cardNumber);
+void callTimeThread(int playerNr);
 
 #endif

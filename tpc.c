@@ -26,6 +26,7 @@
  int player_nr = 0;
  char table_path[PATH_MAX];
  char log_name[LINE_SIZE];
+ int quit_thread = 0;
 
  int main (int argc, char **argv) {
   #ifdef CLEAR
@@ -574,34 +575,58 @@ void displayRound() {
   
 }
 
-void turnTime(int playing, int min, int sec) {
+void *turnTime(void *ptr) {
+
+  int playing = (int)ptr;
 
   struct tm *current;
-  time_t current_time1;
+  struct tm *init;
+  time_t current_time1, init_time;
   int delmin, delsec;
+  int min, sec;
   
-  if (time(&current_time1) == -1) {
+  pthread_t tid = pthread_self();
+
+  if (pthread_detach(tid) != 0) {
+    perror("pthread_detach()");
+    exit(-1);
+  }
+
+  if (time(&init_time) == -1) {
     perror("time()");
     exit(-1);
   }
-  
-  if ((current = localtime(&current_time1)) == NULL) {
+
+  if ((init = localtime(&init_time)) == NULL) {
     perror("localtime()");
     exit(-1);     
   }
-  
-  if (playing != shm_ptr->turn_to_play) {
-    playing = shm_ptr->turn_to_play;
-    min = current->tm_min;
-    sec = current->tm_sec;
-    printf("\n");
+  min = init->tm_min;
+  sec = init->tm_sec;
+
+  while (!quit_thread) {
+    if (time(&current_time1) == -1) {
+      perror("time()");
+      exit(-1);
+    }
+
+    if ((current = localtime(&current_time1)) == NULL) {
+      perror("localtime()");
+      exit(-1);     
+    }
+
+    delmin = current->tm_min - min;
+
+    delsec = current->tm_sec - sec;
+
+    printf("\rPlayer %d round time: %d:%d", playing, delmin, delsec);
   }
-  
-  delmin = current->tm_min - min;
-  
-  delsec = current->tm_sec - sec;
-  
-  printf("\rPlayer %d round time: %d:%d", playing, delmin, delsec);
+
+  printf("\n");
+  quit_thread = 0;
+
+  free(ptr);
+  return NULL;
 }
 
 void blockSignals() {
@@ -668,13 +693,15 @@ void *playGame(void *ptr) {
     
     if (shm_ptr->turn_to_play != player_nr) {
       displayRound();
+      callTimeThread(shm_ptr->turn_to_play);
       pthread_cond_wait(&(shm_ptr->play_cond_var), &(shm_ptr->play_mut));
+      quit_thread = -1;
     }
     else {
       printf("Cards in hand: %d\n", nr_cards_in_hand);
       
       printCardsList(hand, NULL);
-      
+
       if ((errno = pthread_create(&tidP, NULL, playCard, NULL)) != 0) {
        perror("pthread_create()");
        exit(-1);
@@ -700,6 +727,17 @@ pthread_mutex_unlock(&(shm_ptr->play_mut));
 pthread_join(tidP, NULL);
 
 return NULL;
+}
+
+void callTimeThread(int playerNr) {
+
+  pthread_t tid;
+
+  if ((errno = pthread_create(&tid, NULL, turnTime, (void*)playerNr)) != 0) {
+   perror("pthread_create()");
+   exit(-1);
+ }
+
 }
 
 void callHandEvent() {
@@ -739,7 +777,10 @@ void printCardsList(char cards[][4], char *alloc_str) {
       sprintf(tmp, "%s", cards[a]);
       strcat(alloc_str, tmp);
     }
-    if (cards[a + 1] != NULL && strcmp(cards[a + 1], "\0")) {
+
+    //printf("a:%d\n", a);
+    
+    if (cards[a + 1] != NULL && strcmp(cards[a + 1], "\0") != 0) {
       if (cards[a+1][2] != n) {
         if (alloc_str == NULL) {
          printf("/");
