@@ -8,7 +8,7 @@
 #define MAX_NICK_LENGTH 21
 #define NR_CARDS 52
 #define CHARS_PER_CARD 4
-#define LINE_SIZE 200
+#define LINE_SIZE 500
 
 /*
  * event's strings
@@ -72,7 +72,7 @@ void turnTime(int playing, int min, int sec);
 void reorderCardsList(char cards[][4]);
 void blockSignals();
 void *playGame(void *ptr);
-void printCardsList(char cards[][4]);
+void printCardsList(char cards[][4], char *alloc_str);
 void randomiseFirstPlayer();
 void callFirstPlayer();
 int searchCard(char card[4], int i);
