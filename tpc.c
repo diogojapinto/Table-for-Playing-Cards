@@ -328,24 +328,28 @@ void *dealCards(void *ptr) {
       exit(-1);
     }
 
-    print_info_t *print_struct = malloc(sizeof(print_info_t));
-
-    printf("agugudada\n");
-    strcpy(print_struct->who, shm_ptr->players[0].nickname);
-    printf("agugujadeu\n");
-    strcpy(print_struct->what, DEAL_EVENT);
-    strcpy(print_struct->result, "-");
-
-    pthread_t tidP;
-    if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
-      perror("pthread_create()");
-      exit(-1);
-    }
+    callDealEvent();
     
     pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_index]));
   }
   
   return NULL;
+}
+
+void callDealEvent() {
+  print_info_t *print_struct = malloc(sizeof(print_info_t));
+
+  printf("agugudada\n");
+  strcpy(print_struct->who, shm_ptr->players[0].nickname);
+  printf("agugujadeu\n");
+  strcpy(print_struct->what, DEAL_EVENT);
+  strcpy(print_struct->result, "-");
+
+  pthread_t tidP;
+  if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
+    perror("pthread_create()");
+    exit(-1);
+  }
 }
 
 void receiveCards() {
@@ -450,18 +454,7 @@ void *playCard(void *ptr) {
 
 printf("card played: %s\n", hand[cardNumber]);
 
-print_info_t *print_struct = malloc(sizeof(print_info_t));
-
-strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
-strcpy(print_struct->what, PLAY_EVENT);
-
-strcpy(print_struct->result, hand[cardNumber]);
-
-pthread_t tidP;
-if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
-  perror("pthread_create()");
-  exit(-1);
-}
+callPlayEvent(cardNumber);
 
 addCardToTable(cardNumber);
 
@@ -470,6 +463,21 @@ removeCardFromHand(cardNumber);
 updatePlayersTurn();
 
 return NULL;
+}
+
+void callPlayEvent(int cardNumber) {
+  print_info_t *print_struct = malloc(sizeof(print_info_t));
+
+  strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
+  strcpy(print_struct->what, PLAY_EVENT);
+
+  strcpy(print_struct->result, hand[cardNumber]);
+
+  pthread_t tidP;
+  if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
+    perror("pthread_create()");
+    exit(-1);
+  }
 }
 
 int searchCard(char chosen_card[4], int i) {
@@ -628,6 +636,11 @@ void reorderCardsList(char cards[][4]) {
    }
  }
 
+ callReceiveEvent();
+
+}
+
+void callReceiveEvent() {
  print_info_t *print_struct = malloc(sizeof(print_info_t));
 
  strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
@@ -644,7 +657,6 @@ void reorderCardsList(char cards[][4]) {
   perror("pthread_create()");
   exit(-1);
 }
-
 }
 
 void *playGame(void *ptr) {
@@ -670,25 +682,11 @@ void *playGame(void *ptr) {
 
      pthread_cond_wait(&(shm_ptr->play_cond_var), &(shm_ptr->play_mut));
 
-     print_info_t *print_struct = malloc(sizeof(print_info_t));
+     callHandEvent();
 
-     strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
-     strcpy(print_struct->what, HAND_EVENT);
+   }
 
-     char curr_hand[LINE_SIZE];
-
-     printCardsList(hand, curr_hand);
-
-     strcpy(print_struct->result, curr_hand);
-
-     pthread_t tidP;
-     if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
-      perror("pthread_create()");
-      exit(-1);
-    }
-  }
-
-  if (shm_ptr->game_ended) {
+   if (shm_ptr->game_ended) {
     printf("Game has ended!");
     pthread_mutex_unlock(&(shm_ptr->play_mut));
     return NULL;
@@ -702,6 +700,26 @@ pthread_mutex_unlock(&(shm_ptr->play_mut));
 pthread_join(tidP, NULL);
 
 return NULL;
+}
+
+void callHandEvent() {
+
+ print_info_t *print_struct = malloc(sizeof(print_info_t));
+
+ strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
+ strcpy(print_struct->what, HAND_EVENT);
+
+ char curr_hand[LINE_SIZE];
+
+ printCardsList(hand, curr_hand);
+
+ strcpy(print_struct->result, curr_hand);
+
+ pthread_t tidP;
+ if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
+  perror("pthread_create()");
+  exit(-1);
+}
 }
 
 void printCardsList(char cards[][4], char *alloc_str) {

@@ -79,5 +79,9 @@ int searchCard(char card[4], int i);
 void *writeHeaderToLog(void *ptr);
 void *writeEventToLog(void *info_ptr);
 void randomiseFirstPlayer();
+void callHandEvent();
+void callDealEvent();
+void callReceiveEvent();
+void callPlayEvent(int cardNumber);
 
 #endif
