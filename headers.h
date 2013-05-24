@@ -30,6 +30,7 @@
 #include <termios.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <libgen.h>
 
 
 #endif
