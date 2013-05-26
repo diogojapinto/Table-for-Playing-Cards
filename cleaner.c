@@ -5,6 +5,8 @@ int main(int argc, char **argv) {
   strcpy(table_path, dirname(argv[0]));
   strcat(table_path, "/");
   strcat(table_path, argv[1]);
-  shm_unlink(argv[1]);
+  if (shm_unlink(argv[1]) == -1)
+    perror("shm_unlink()");
+  
   return 0;
 }

@@ -67,7 +67,7 @@ void *playCard(void *ptr);
 void removeCardFromHand(int cardNumber);
 void addCardToTable(int cardNumber);
 void updatePlayersTurn();
-void displayRound();
+void displayRoundInfo();
 void *turnTime(void *ptr);
 void reorderCardsList(char cards[][4]);
 void blockSignals();

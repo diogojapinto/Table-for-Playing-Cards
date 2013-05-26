@@ -16,19 +16,19 @@
 
 //#define CLEAR
 
- int is_dealer = 0;
- int shmid = 0;
- shared_fields_t *shm_ptr = NULL;
- char own_fifo_path[PATH_MAX];
- int fifo_filedes = -1;
- char hand[NR_CARDS / 2][CHARS_PER_CARD];
- int nr_cards_in_hand = 0;
- int player_nr = 0;
- char table_path[PATH_MAX];
- char log_name[LINE_SIZE];
- int quit_thread = 0;
+int is_dealer = 0;
+int shmid = 0;
+shared_fields_t *shm_ptr = NULL;
+char own_fifo_path[PATH_MAX];
+int fifo_filedes = -1;
+char hand[NR_CARDS / 2][CHARS_PER_CARD];
+int nr_cards_in_hand = 0;
+int player_nr = 0;
+char table_path[PATH_MAX];
+char log_name[LINE_SIZE];
+int quit_thread = 0;
 
- int main (int argc, char **argv) {
+int main (int argc, char **argv) {
   #ifdef CLEAR
   strcpy(table_path, dirname(argv[0]));
   strcat(table_path, "/");
@@ -62,7 +62,7 @@
   pthread_t tid;
   
   if (is_dealer) {
-
+    
     initDefaultDeck();
     printCardsList(cards, NULL);
     shuffleDeck();
@@ -93,7 +93,7 @@
 }
 
 int verifyCmdArgs(char **argv) {
-
+  
   // verifies if the 3rd arg is an integer
   char *c;
   for ( c = argv[3]; c != NULL && *c != '\0'; c++) {
@@ -130,7 +130,7 @@ int verifyCmdArgs(char **argv) {
 
 
 void initFIFO(char *name) {
-
+  
   // tries to create the FIFO
   mkfifo(name, S_IRUSR | S_IWUSR);
   
@@ -154,108 +154,108 @@ void initSharedMem(char **args) {
     if (errno == EEXIST) {
       // if it wasn't successfull, test if it already existed
       if ((shm_fd = shm_open(table_path, O_RDWR, 0600)) == -1) {
-       perror("shm_open()");
-       exit(-1);
-     }
-     is_dealer = 0;
-   } else {
-    perror("shm_open()");
-    exit(-1);
+	perror("shm_open()");
+	exit(-1);
+      }
+      is_dealer = 0;
+    } else {
+      perror("shm_open()");
+      exit(-1);
+    }
+  } else {
+    is_dealer = -1;
+    
+    if (ftruncate(shm_fd, sizeof(shared_fields_t)) == -1) {
+      perror("ftruncate()");
+      exit(-1);
+    }
   }
-} else {
-  is_dealer = -1;
-
-  if (ftruncate(shm_fd, sizeof(shared_fields_t)) == -1) {
-    perror("ftruncate()");
+  if ((shm_ptr = (shared_fields_t *)mmap(0, sizeof(shared_fields_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0)) == NULL) {
+    perror("mmap");
     exit(-1);
-  }
-}
-if ((shm_ptr = (shared_fields_t *)mmap(0, sizeof(shared_fields_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0)) == NULL) {
-  perror("mmap");
-  exit(-1);
-}  
-
+  }  
+  
   //initialize the mutexes and condition variables attributes  
-pthread_mutexattr_t mattr;
-pthread_condattr_t cattr;
-pthread_mutexattr_init(&mattr);
-pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
-pthread_condattr_init(&cattr);
-pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED);
-pthread_mutex_t *mptr;
-pthread_cond_t *cptr;
-
-if (is_dealer) {
-  strcpy(shm_ptr->tables_name, args[2]);
-  shm_ptr->nr_players = atoi(args[3]);
-  shm_ptr->dealer = 0;
-  shm_ptr->last_loggedin_player = 0;
-  shm_ptr->turn_to_play = 0;
-  shm_ptr->round_number = 0;
-  shm_ptr->players[0].number = 0;
-  strcpy(shm_ptr->players[0].nickname, args[1]);
-  strcpy(shm_ptr->players[0].fifo_path, own_fifo_path);
-  shm_ptr->game_ended = 0;
-
+  pthread_mutexattr_t mattr;
+  pthread_condattr_t cattr;
+  pthread_mutexattr_init(&mattr);
+  pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
+  pthread_condattr_init(&cattr);
+  pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED);
+  pthread_mutex_t *mptr;
+  pthread_cond_t *cptr;
+  
+  if (is_dealer) {
+    strcpy(shm_ptr->tables_name, args[2]);
+    shm_ptr->nr_players = atoi(args[3]);
+    shm_ptr->dealer = 0;
+    shm_ptr->last_loggedin_player = 0;
+    shm_ptr->turn_to_play = 0;
+    shm_ptr->round_number = 0;
+    shm_ptr->players[0].number = 0;
+    strcpy(shm_ptr->players[0].nickname, args[1]);
+    strcpy(shm_ptr->players[0].fifo_path, own_fifo_path);
+    shm_ptr->game_ended = 0;
+    
     //initialize shared mutexes and conditional variables    
-
-  mptr = &(shm_ptr->startup_mut);
-  if (pthread_mutex_init(mptr, &mattr) == -1) {
-    perror("pthread_mutex_init()");
-    exit(-1);
+    
+    mptr = &(shm_ptr->startup_mut);
+    if (pthread_mutex_init(mptr, &mattr) == -1) {
+      perror("pthread_mutex_init()");
+      exit(-1);
+    }
+    
+    mptr = &(shm_ptr->deal_cards_mut[0]);
+    if (pthread_mutex_init(mptr, &mattr) == -1) {
+      perror("pthread_mutex_init()");
+      exit(-1);
+    }
+    
+    mptr = &(shm_ptr->play_mut);
+    if (pthread_mutex_init(mptr, &mattr) == -1) {
+      perror("pthread_mutex_init()");
+      exit(-1);
+    }
+    
+    
+    mptr = &(shm_ptr->log_mut);
+    if (pthread_mutex_init(mptr, &mattr) == -1) {
+      perror("pthread_mutex_init()");
+      exit(-1);
+    }
+    
+    cptr = &(shm_ptr->startup_cond_var);
+    if (pthread_cond_init(cptr, &cattr) == -1) {
+      perror("pthread_cond_init()");
+      exit(-1);
+    }
+    
+    cptr = &(shm_ptr->play_cond_var);
+    if (pthread_cond_init(cptr, &cattr) == -1) {
+      perror("pthread_cond_init()");
+      exit(-1);
+    }
+    
+  } else {
+    if (atoi(args[3]) != shm_ptr->nr_players) {
+      printf("Number of players different from the one saved!\n");
+      exit(-1);
+    }
+    player_nr = ++(shm_ptr->last_loggedin_player);
+    shm_ptr->players[player_nr].number = player_nr;
+    strcpy(shm_ptr->players[player_nr].nickname, args[1]);
+    strcpy(shm_ptr->players[player_nr].fifo_path, own_fifo_path);
+    
+    mptr = &(shm_ptr->deal_cards_mut[player_nr]);
+    if (pthread_mutex_init(mptr, &mattr) == -1) {
+      perror("pthread_mutex_init()");
+      exit(-1);
+    }
+    
+    pthread_cond_broadcast(&(shm_ptr->startup_cond_var));
   }
-
-  mptr = &(shm_ptr->deal_cards_mut[0]);
-  if (pthread_mutex_init(mptr, &mattr) == -1) {
-    perror("pthread_mutex_init()");
-    exit(-1);
-  }
-
-  mptr = &(shm_ptr->play_mut);
-  if (pthread_mutex_init(mptr, &mattr) == -1) {
-    perror("pthread_mutex_init()");
-    exit(-1);
-  }
-
-
-  mptr = &(shm_ptr->log_mut);
-  if (pthread_mutex_init(mptr, &mattr) == -1) {
-    perror("pthread_mutex_init()");
-    exit(-1);
-  }
-
-  cptr = &(shm_ptr->startup_cond_var);
-  if (pthread_cond_init(cptr, &cattr) == -1) {
-    perror("pthread_cond_init()");
-    exit(-1);
-  }
-
-  cptr = &(shm_ptr->play_cond_var);
-  if (pthread_cond_init(cptr, &cattr) == -1) {
-    perror("pthread_cond_init()");
-    exit(-1);
-  }
-
-} else {
-  if (atoi(args[3]) != shm_ptr->nr_players) {
-    printf("Number of players different from the one saved!\n");
-    exit(-1);
-  }
-  player_nr = ++(shm_ptr->last_loggedin_player);
-  shm_ptr->players[player_nr].number = player_nr;
-  strcpy(shm_ptr->players[player_nr].nickname, args[1]);
-  strcpy(shm_ptr->players[player_nr].fifo_path, own_fifo_path);
-
-  mptr = &(shm_ptr->deal_cards_mut[player_nr]);
-  if (pthread_mutex_init(mptr, &mattr) == -1) {
-    perror("pthread_mutex_init()");
-    exit(-1);
-  }
-
-  pthread_cond_broadcast(&(shm_ptr->startup_cond_var));
-}
-
-printf("Player %s logged in with the index %d.\n", shm_ptr->players[shm_ptr->last_loggedin_player].nickname, shm_ptr->last_loggedin_player);
+  
+  printf("Player %s logged in with the index %d.\n", shm_ptr->players[shm_ptr->last_loggedin_player].nickname, shm_ptr->last_loggedin_player);
 }
 
 void initDefaultDeck() {
@@ -277,7 +277,7 @@ void initDefaultDeck() {
 }
 
 void shuffleDeck() {
-
+  
   srand(time(NULL));
   
   int nr_cycles = 200, i = 0;
@@ -301,7 +301,7 @@ void *dealCards(void *ptr) {
   int cards_per_player = NR_CARDS / nr_players;
   
   printf("Giving cards\n");
-
+  
   pthread_t tid;
   if ((errno = pthread_create(&tid, NULL, writeHeaderToLog, NULL)) != 0) {
     perror("pthread_create()");
@@ -328,7 +328,7 @@ void *dealCards(void *ptr) {
       perror("close()");
       exit(-1);
     }
-
+    
     callDealEvent();
     
     pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_index]));
@@ -339,13 +339,11 @@ void *dealCards(void *ptr) {
 
 void callDealEvent() {
   print_info_t *print_struct = malloc(sizeof(print_info_t));
-
-  printf("agugudada\n");
+  
   strcpy(print_struct->who, shm_ptr->players[0].nickname);
-  printf("agugujadeu\n");
   strcpy(print_struct->what, DEAL_EVENT);
   strcpy(print_struct->result, "-");
-
+  
   pthread_t tidP;
   if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
     perror("pthread_create()");
@@ -365,32 +363,32 @@ void receiveCards() {
       strcpy(hand[hand_index++], card);
     } else {
       if (card[0] == '\0' && hand_index != 0) {
-       break;
-     }
-   }
-   pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
- }
-
- strcpy(log_name, shm_ptr->tables_name);
- strcat(log_name, ".log");
-
- pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
- pthread_mutex_destroy(&(shm_ptr->deal_cards_mut[player_nr]));
-
- strcpy(hand[hand_index], "\0");
- nr_cards_in_hand = hand_index;
-
- if (close(fifo_filedes) == -1) {
-  perror("close()");
-  exit(-1);
-}
-
-if (unlink(own_fifo_path) == -1) {
-  perror("unlink()");
-  exit(-1);
-}
-
-printf("Received Cards\n");
+	break;
+      }
+    }
+    pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
+  }
+  
+  strcpy(log_name, shm_ptr->tables_name);
+  strcat(log_name, ".log");
+  
+  pthread_mutex_unlock(&(shm_ptr->deal_cards_mut[player_nr]));
+  pthread_mutex_destroy(&(shm_ptr->deal_cards_mut[player_nr]));
+  
+  strcpy(hand[hand_index], "\0");
+  nr_cards_in_hand = hand_index;
+  
+  if (close(fifo_filedes) == -1) {
+    perror("close()");
+    exit(-1);
+  }
+  
+  if (unlink(own_fifo_path) == -1) {
+    perror("unlink()");
+    exit(-1);
+  }
+  
+  printf("Received Cards\n");
 }
 
 void waitForPlayers() {
@@ -410,7 +408,7 @@ void waitForPlayers() {
 }
 
 void exitHandler(void) {
-
+  
   munmap(shm_ptr, sizeof(shared_fields_t));
   
   // by convention, the dealer frees the shared memory block
@@ -425,55 +423,55 @@ void *playCard(void *ptr) {
   char ch;
   char chosen_card[4];
   int cardNumber;
-
-
+  
+  
   int i=0;
   while (1) {
-
+    
     printf("Insert card: \n");
     
     while (read(STDIN_FILENO, &ch, 1) == 1) {
       if (ch != '\n') {
-       chosen_card[i] = ch;
-       i++;
-     }
-     else {
-       chosen_card[i] = '\0';
-       break;
-     }
-   }
-
-   cardNumber = searchCard(chosen_card,i);
-   if (cardNumber != -1) {
-    break;
+	chosen_card[i] = ch;
+	i++;
+      }
+      else {
+	chosen_card[i] = '\0';
+	break;
+      }
+    }
+    
+    cardNumber = searchCard(chosen_card,i);
+    if (cardNumber != -1) {
+      break;
+    }
+    else {
+      printf("\nWrong Card! Try again.\n");
+      i=0;
+    }
   }
-  else {
-    printf("\nWrong Card! Try again.\n");
-    i=0;
-  }
-}
-
-printf("card played: %s\n", hand[cardNumber]);
-
-callPlayEvent(cardNumber);
-
-addCardToTable(cardNumber);
-
-removeCardFromHand(cardNumber);
-
-updatePlayersTurn();
-
-return NULL;
+  
+  printf("card played: %s\n", hand[cardNumber]);
+  
+  callPlayEvent(cardNumber);
+  
+  addCardToTable(cardNumber);
+  
+  removeCardFromHand(cardNumber);
+  
+  updatePlayersTurn();
+  
+  return NULL;
 }
 
 void callPlayEvent(int cardNumber) {
   print_info_t *print_struct = malloc(sizeof(print_info_t));
-
+  
   strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
   strcpy(print_struct->what, PLAY_EVENT);
-
+  
   strcpy(print_struct->result, hand[cardNumber]);
-
+  
   pthread_t tidP;
   if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
     perror("pthread_create()");
@@ -482,7 +480,7 @@ void callPlayEvent(int cardNumber) {
 }
 
 int searchCard(char chosen_card[4], int i) {
-
+  
   if (i != 3) {
     chosen_card[3] = '\0';
     chosen_card[2] = chosen_card[1];
@@ -501,7 +499,7 @@ int searchCard(char chosen_card[4], int i) {
 }
 
 void addCardToTable(int cardNumber) {
-
+  
   pthread_mutex_lock(&(shm_ptr->play_mut));
   
   int i = shm_ptr->round_number + player_nr;
@@ -514,11 +512,11 @@ void addCardToTable(int cardNumber) {
 }
 
 void removeCardFromHand(int cardNumber) {
-
+  
   int i=cardNumber;
   
   while (i<nr_cards_in_hand - 1) {
-
+    
     strcpy(hand[i],hand[i+1]);
     i++;
   }
@@ -527,7 +525,7 @@ void removeCardFromHand(int cardNumber) {
 }
 
 void updatePlayersTurn() {
-
+  
   pthread_mutex_lock(&(shm_ptr->play_mut));
   
   if ((shm_ptr->turn_to_play + 1) < shm_ptr->nr_players) {
@@ -542,7 +540,6 @@ void updatePlayersTurn() {
     if (strcmp(hand[0],"\0") == 0) {
       shm_ptr->game_ended = -1;
     }
-    printf("\n\n round incremented\n\n");
   }
   
   pthread_cond_broadcast(&(shm_ptr->play_cond_var));
@@ -550,8 +547,8 @@ void updatePlayersTurn() {
   pthread_mutex_unlock(&(shm_ptr->play_mut));
 }
 
-void displayRound() {
-
+void displayRoundInfo() {
+  
   int i =0;
   
   if (shm_ptr->round_number != 0) {
@@ -576,56 +573,66 @@ void displayRound() {
 }
 
 void *turnTime(void *ptr) {
-
-  int playing = (int)ptr;
-
+  
+  int playing = *(int *)ptr;
+  free (ptr);
+  
   struct tm *current;
   struct tm *init;
   time_t current_time1, init_time;
-  int delmin, delsec;
-  int min, sec;
+  int delmin = 0, delsec = 0;
+  int sec = 0;
   
   pthread_t tid = pthread_self();
-
+  
   if (pthread_detach(tid) != 0) {
     perror("pthread_detach()");
     exit(-1);
   }
-
+  
   if (time(&init_time) == -1) {
     perror("time()");
     exit(-1);
   }
-
+  
   if ((init = localtime(&init_time)) == NULL) {
     perror("localtime()");
-    exit(-1);     
+    exit(-1);
   }
-  min = init->tm_min;
+  
   sec = init->tm_sec;
-
+  int updated = 0;
+  
   while (!quit_thread) {
     if (time(&current_time1) == -1) {
       perror("time()");
       exit(-1);
     }
-
+    
     if ((current = localtime(&current_time1)) == NULL) {
       perror("localtime()");
       exit(-1);     
     }
-
-    delmin = current->tm_min - min;
-
+    
+    if (current->tm_sec == 0) {
+      if (updated == 0) {
+	sec -= 60;
+	updated = -1;
+      }
+    } else {
+      updated = 0;
+    }
     delsec = current->tm_sec - sec;
-
-    printf("\rPlayer %d round time: %d:%d", playing, delmin, delsec);
+    delmin = delsec / 60;
+    delsec %= 60;
+    
+    printf("\rPlayer %d round time: %02d:%02d ", playing, delmin, delsec);
+    usleep(100);
   }
-
+  
   printf("\n");
   quit_thread = 0;
-
-  free(ptr);
+  
   return NULL;
 }
 
@@ -647,41 +654,41 @@ void reorderCardsList(char cards[][4]) {
     for (j = i + 1; cards[j] != NULL && strcmp(cards[j], "\0") != 0; j++) {
       int first_index = 0, second_index = 0;
       while(cards[i][2] != order[first_index]) {
-       first_index++;
-     }
-     while(cards[j][2] != order[second_index]) {
-       second_index++;
-     }
-     if (first_index > second_index) {
-       char tmp[4];
-       strcpy(tmp, cards[j]);
-       strcpy(cards[j], cards[i]);
-       strcpy(cards[i], tmp);
-     }
-   }
- }
-
- callReceiveEvent();
-
+	first_index++;
+      }
+      while(cards[j][2] != order[second_index]) {
+	second_index++;
+      }
+      if (first_index > second_index) {
+	char tmp[4];
+	strcpy(tmp, cards[j]);
+	strcpy(cards[j], cards[i]);
+	strcpy(cards[i], tmp);
+      }
+    }
+  }
+  
+  callReceiveEvent();
+  
 }
 
 void callReceiveEvent() {
- print_info_t *print_struct = malloc(sizeof(print_info_t));
-
- strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
- strcpy(print_struct->what, RECEIVE_CARDS_EVENT);
-
- char curr_hand[LINE_SIZE];
-
- printCardsList(hand, curr_hand);
-
- strcpy(print_struct->result, curr_hand);
-
- pthread_t tidP;
- if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
-  perror("pthread_create()");
-  exit(-1);
-}
+  print_info_t *print_struct = malloc(sizeof(print_info_t));
+  
+  strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
+  strcpy(print_struct->what, RECEIVE_CARDS_EVENT);
+  
+  char curr_hand[LINE_SIZE];
+  
+  printCardsList(hand, curr_hand);
+  
+  strcpy(print_struct->result, curr_hand);
+  
+  pthread_t tidP;
+  if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
+    perror("pthread_create()");
+    exit(-1);
+  }
 }
 
 void *playGame(void *ptr) {
@@ -690,9 +697,10 @@ void *playGame(void *ptr) {
   
   while (1) {
     pthread_mutex_lock(&(shm_ptr->play_mut));
+    system("clear");
+    displayRoundInfo();
     
     if (shm_ptr->turn_to_play != player_nr) {
-      displayRound();
       callTimeThread(shm_ptr->turn_to_play);
       pthread_cond_wait(&(shm_ptr->play_cond_var), &(shm_ptr->play_mut));
       quit_thread = -1;
@@ -701,71 +709,74 @@ void *playGame(void *ptr) {
       printf("Cards in hand: %d\n", nr_cards_in_hand);
       
       printCardsList(hand, NULL);
-
+      
       if ((errno = pthread_create(&tidP, NULL, playCard, NULL)) != 0) {
-       perror("pthread_create()");
-       exit(-1);
-     }
-
-     pthread_cond_wait(&(shm_ptr->play_cond_var), &(shm_ptr->play_mut));
-
-     callHandEvent();
-
-   }
-
-   if (shm_ptr->game_ended) {
-    printf("Game has ended!");
+	perror("pthread_create()");
+	exit(-1);
+      }
+      
+      pthread_cond_wait(&(shm_ptr->play_cond_var), &(shm_ptr->play_mut));
+      
+      callHandEvent();
+      
+    }
+    
+    if (shm_ptr->game_ended) {
+      printf("Game has ended!");
+	pthread_mutex_unlock(&(shm_ptr->play_mut));
+	return NULL;
+    }
     pthread_mutex_unlock(&(shm_ptr->play_mut));
-    return NULL;
   }
+  
+  
   pthread_mutex_unlock(&(shm_ptr->play_mut));
-}
-
-
-pthread_mutex_unlock(&(shm_ptr->play_mut));
-
-pthread_join(tidP, NULL);
-
-return NULL;
+  
+  pthread_join(tidP, NULL);
+  
+  return NULL;
 }
 
 void callTimeThread(int playerNr) {
-
+  
   pthread_t tid;
-
-  if ((errno = pthread_create(&tid, NULL, turnTime, (void*)playerNr)) != 0) {
-   perror("pthread_create()");
-   exit(-1);
- }
-
+  
+  int *oth_player_nr = malloc(sizeof(int));
+  *oth_player_nr = playerNr;
+  
+  if ((errno = pthread_create(&tid, NULL, turnTime, (void*)oth_player_nr)) != 0) {
+    perror("pthread_create()");
+    exit(-1);
+  }
+  
 }
 
 void callHandEvent() {
-
- print_info_t *print_struct = malloc(sizeof(print_info_t));
-
- strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
- strcpy(print_struct->what, HAND_EVENT);
-
- char curr_hand[LINE_SIZE];
-
- printCardsList(hand, curr_hand);
-
- strcpy(print_struct->result, curr_hand);
-
- pthread_t tidP;
- if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
-  perror("pthread_create()");
-  exit(-1);
-}
+  
+  print_info_t *print_struct = malloc(sizeof(print_info_t));
+  
+  strcpy(print_struct->who, shm_ptr->players[player_nr].nickname);
+  strcpy(print_struct->what, HAND_EVENT);
+  
+  char curr_hand[LINE_SIZE];
+  
+  printCardsList(hand, curr_hand);
+  
+  strcpy(print_struct->result, curr_hand);
+  
+  pthread_t tidP;
+  if ((errno = pthread_create(&tidP, NULL, writeEventToLog, print_struct)) != 0) {
+    perror("pthread_create()");
+    exit(-1);
+  }
 }
 
 void printCardsList(char cards[][4], char *alloc_str) {
-
+  
   char n;
   if (alloc_str != NULL)
     strcpy(alloc_str, "");
-
+  
   char tmp[LINE_SIZE];
   
   int a = 0;
@@ -777,32 +788,30 @@ void printCardsList(char cards[][4], char *alloc_str) {
       sprintf(tmp, "%s", cards[a]);
       strcat(alloc_str, tmp);
     }
-
-    //printf("a:%d\n", a);
     
     if (cards[a + 1] != NULL && strcmp(cards[a + 1], "\0") != 0) {
       if (cards[a+1][2] != n) {
-        if (alloc_str == NULL) {
-         printf("/");
-       } else {
-        sprintf(tmp,"/");
-        strcat(alloc_str, tmp);
+	if (alloc_str == NULL) {
+	  printf("/");
+	} else {
+	  sprintf(tmp,"/");
+	  strcat(alloc_str, tmp);
+	}
+	n = cards[a+1][2];
+	
+      } else {
+	if (alloc_str == NULL) {
+	  printf("-");
+	} else {
+	  sprintf(tmp, "-");
+	  strcat(alloc_str, tmp);
+	}
       }
-      n = cards[a+1][2];
-
-    } else {
-      if (alloc_str == NULL) {
-       printf("-");
-     } else {
-       sprintf(tmp, "-");
-       strcat(alloc_str, tmp);
-     }
-   }
- }
-}
-if (alloc_str == NULL) {
-  printf("\n");
-}
+    }
+  }
+  if (alloc_str == NULL) {
+    printf("\n");
+  }
 }
 
 
@@ -837,18 +846,17 @@ void *writeHeaderToLog(void *ptr) {
   write(log_fd, header, nr_chars);
   close(log_fd);
   
-  printf("a\n");
   pthread_mutex_unlock(&(shm_ptr->log_mut));
   
-
+  
   free(ptr);
   return NULL;
 }
 
 void *writeEventToLog(void *info_ptr) {
-
-
-
+  
+  
+  
   print_info_t *info = (print_info_t *)info_ptr;
   int log_fd;
   
@@ -860,11 +868,8 @@ void *writeEventToLog(void *info_ptr) {
     perror("pthread_detach()");
     exit(-1);
   }
-
+  
   pthread_mutex_lock(&(shm_ptr->log_mut));
-  
-  
-  printf("b\n");
   
   if ((log_fd = open(log_name, O_WRONLY | O_APPEND, 0600)) == -1) {
     perror("open1()");
@@ -902,8 +907,6 @@ void *writeEventToLog(void *info_ptr) {
   int nr_chars = sprintf(header, "\n%-20s|%-20s|%-20s|%-20s", when, info->who, info->what, info->result);
   write(log_fd, header, nr_chars);
   close(log_fd);
-  
-  printf("fim escrita'\n");
   
   pthread_mutex_unlock(&(shm_ptr->log_mut));
   
