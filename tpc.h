@@ -18,6 +18,7 @@
 #define PLAY_EVENT "play"
 #define HAND_EVENT "hand"
 
+//structure to write events to log file
 typedef struct {
   char who[LINE_SIZE];
   char what[LINE_SIZE];
@@ -54,35 +55,116 @@ typedef struct {
   int game_ended;
 } shared_fields_t;
 
+/** Verify if the arguments passed in the program call are correct
+ *
+ */
 int verifyCmdArgs(char **argv);
+/** Creates the fifo for the player and opens it ready for reading
+ * 
+ */
 void initFIFO(char *name);
+/** Creates the shared memory having the dealer initializing all the variables
+ *  
+ */
 void initSharedMem(char **args);
 void exitHandler(void);
+/** Creates a new deck to the proper structure
+ *
+ */
 void initDefaultDeck();
+/** Shuffles the deck
+ *
+ */
 void shuffleDeck();
+/** Deals each player cards by writing to their own fifo
+ *
+ */
 void *dealCards(void *ptr);
+/** Players receive the cards by reading their fifo
+ *
+ */
 void receiveCards();
+/** uses a condition variable to wait for all the players to join the game
+ *
+ */
 void waitForPlayers();
+/** Thread that reads user input to choose a card and play it
+ *
+ */
 void *playCard(void *ptr);
+/** removes the card from the player hand
+ *
+ */
 void removeCardFromHand(int cardNumber);
+/** Adds the played card to the table cards structure
+ *
+ */
 void addCardToTable(int cardNumber);
+/** Updates the variable representing the next player to play, increases the round number when needed
+ *  and ends the game
+ *
+ */
 void updatePlayersTurn();
+/** Displays the rounds cards
+ *
+ */
 void displayRoundInfo();
+/** Counts the time of the current turn
+ *
+ */
 void *turnTime(void *ptr);
+/** Reorders the cards by suit
+ *
+ */
 void reorderCardsList(char cards[][4]);
+/** Creates a signal mask to block the players from force quiting the game
+ *
+ */
 void blockSignals();
+/** thread that syncronizes the game events and displays all information to the player 
+ *
+ */
 void *playGame(void *ptr);
+/** prints the cards to the console or to alloc_str
+ *
+ */
 void printCardsList(char cards[][4], char *alloc_str);
+/** Chooses first player
+ *
+ */
 void randomiseFirstPlayer();
 void callFirstPlayer();
+/** Function that searchs the user input and checks if it represents a valid card
+ *
+ */
 int searchCard(char card[4], int i);
+/** writes the header to the log file
+ *
+ */
 void *writeHeaderToLog(void *ptr);
+/** writes different events to the log file
+ *
+ */
 void *writeEventToLog(void *info_ptr);
-void randomiseFirstPlayer();
+/** Calls a thread to write the hand event to the log file
+ *
+ */
 void callHandEvent();
+/** Creates a thread that writes the deal event to the log file
+ *
+ */
 void callDealEvent();
+/** calls a thread to write the receive event to the log file
+ *
+ */
 void callReceiveEvent();
+/** Calls a thread to write the play event to the log file
+ *
+ */
 void callPlayEvent(int cardNumber);
+/** Calls the thread that displays the time of the current turn
+ *
+ */
 void callTimeThread(int playerNr);
 
 #endif
