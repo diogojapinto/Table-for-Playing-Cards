@@ -1,0 +1,21 @@
+when                |who                 |what                |result              
+2013-04-27 09:53:48 |joao                |deal                |-                   
+2013-04-27 09:53:48 |joao                |deal                |-                   
+2013-04-27 09:53:48 |joao                |receive_cards       | 6c- Jc- 7c- 3c/ Jh- 5h/ 3d- 7d-10d- Ad- 5d- Kd/ 6s-10s- As- Qs- 3s
+2013-04-27 09:53:48 |joao                |deal                |-                   
+2013-04-27 09:53:48 |ana                 |receive_cards       | 5c- Ac- 2c-10c/ Ah- 4h- 2h- 9h/ Jd- 4d- 9d- Qd- 8d- 6d/ 5s- 8s- 7s
+2013-04-27 09:53:48 |maria               |receive_cards       | Kc- 8c- Qc- 9c/ Kh- Qh- 3h- 7h- 8h- 6h-10h/ 2d/ 2s- 9s- 4s- Ks- Js
+2013-04-27 09:53:54 |maria               |play                | Kc                 
+2013-04-27 09:53:54 |maria               |hand                | 8c- Qc- 9c/ Kh- Qh- 3h- 7h- 8h- 6h-10h/ 2d/ 2s- 9s- 4s- Ks- Js
+2013-04-27 09:54:04 |joao                |play                | 6c                 
+2013-04-27 09:54:04 |joao                |hand                | Jc- 7c- 3c/ Jh- 5h/ 3d- 7d-10d- Ad- 5d- Kd/ 6s-10s- As- Qs- 3s
+2013-04-27 09:54:09 |ana                 |play                | 7s                 
+2013-04-27 09:54:09 |ana                 |hand                | 5c- Ac- 2c-10c/ Ah- 4h- 2h- 9h/ Jd- 4d- 9d- Qd- 8d- 6d/ 5s- 8s
+2013-04-27 09:54:18 |maria               |play                | Js                 
+2013-04-27 09:54:18 |maria               |hand                | 8c- Qc- 9c/ Kh- Qh- 3h- 7h- 8h- 6h-10h/ 2d/ 2s- 9s- 4s- Ks
+2013-04-27 09:54:31 |joao                |play                | Jc                 
+2013-04-27 09:54:31 |joao                |hand                | 7c- 3c/ Jh- 5h/ 3d- 7d-10d- Ad- 5d- Kd/ 6s-10s- As- Qs- 3s
+2013-04-27 09:54:36 |ana                 |play                | 5c                 
+2013-04-27 09:54:36 |ana                 |hand                | Ac- 2c-10c/ Ah- 4h- 2h- 9h/ Jd- 4d- 9d- Qd- 8d- 6d/ 5s- 8s
+2013-04-27 09:54:39 |maria               |play                | 8c                 
+2013-04-27 09:54:39 |maria               |hand                | Qc- 9c/ Kh- Qh- 3h- 7h- 8h- 6h-10h/ 2d/ 2s- 9s- 4s- Ks

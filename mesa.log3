@@ -1,0 +1,109 @@
+when                |who                 |what                |result              
+2013-04-27 10:02:41 |joao                |deal                |-                   
+2013-04-27 10:02:41 |joao                |receive_cards       | 3c- 4c-10c- 7c/ 5h- Jh-10h- 9h- 2h- Ah/ 8d- 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:02:41 |joao                |deal                |-                   
+2013-04-27 10:02:41 |joao                |deal                |-                   
+2013-04-27 10:02:41 |ana                 |receive_cards       | 9c- 2c- Jc- 5c/ Qh- 4h- 7h/ 7d- Qd- 2d- Jd/ Ks- 7s- Js- 9s- Qs- 3s
+2013-04-27 10:02:41 |maria               |receive_cards       | 6c- Ac- Qc- Kc- 8c/ Kh- 8h- 6h- 3h/ 4d- 9d-10d- Ad/10s- 2s- 4s- 6s
+2013-04-27 10:04:39 |maria               |play                | 6c                 
+2013-04-27 10:04:39 |maria               |hand                | Ac- Qc- Kc- 8c/ Kh- 8h- 6h- 3h/ 4d- 9d-10d- Ad/10s- 2s- 4s- 6s
+2013-04-27 10:04:50 |joao                |play                |10c                 
+2013-04-27 10:04:50 |joao                |hand                | 3c- 4c- 7c/ 5h- Jh-10h- 9h- 2h- Ah/ 8d- 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:06:18 |ana                 |play                | 9c                 
+2013-04-27 10:06:18 |ana                 |hand                | 2c- Jc- 5c/ Qh- 4h- 7h/ 7d- Qd- 2d- Jd/ Ks- 7s- Js- 9s- Qs- 3s
+2013-04-27 10:06:23 |maria               |play                | Ac                 
+2013-04-27 10:06:23 |maria               |hand                | Qc- Kc- 8c/ Kh- 8h- 6h- 3h/ 4d- 9d-10d- Ad/10s- 2s- 4s- 6s
+2013-04-27 10:06:27 |joao                |play                | Ah                 
+2013-04-27 10:06:27 |joao                |hand                | 3c- 4c- 7c/ 5h- Jh-10h- 9h- 2h/ 8d- 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:06:37 |ana                 |play                | Ks                 
+2013-04-27 10:06:37 |ana                 |hand                | 2c- Jc- 5c/ Qh- 4h- 7h/ 7d- Qd- 2d- Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:06:40 |maria               |play                | 8c                 
+2013-04-27 10:06:40 |maria               |hand                | Qc- Kc/ Kh- 8h- 6h- 3h/ 4d- 9d-10d- Ad/10s- 2s- 4s- 6s
+2013-04-27 10:06:43 |joao                |play                | 4c                 
+2013-04-27 10:06:43 |joao                |hand                | 3c- 7c/ 5h- Jh-10h- 9h- 2h/ 8d- 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:06:46 |ana                 |play                | Jc                 
+2013-04-27 10:06:46 |ana                 |hand                | 2c- 5c/ Qh- 4h- 7h/ 7d- Qd- 2d- Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:06:49 |maria               |play                | 2s                 
+2013-04-27 10:06:49 |maria               |hand                | Qc- Kc/ Kh- 8h- 6h- 3h/ 4d- 9d-10d- Ad/10s- 4s- 6s
+2013-04-27 10:06:52 |joao                |play                | 8d                 
+2013-04-27 10:06:52 |joao                |hand                | 3c- 7c/ 5h- Jh-10h- 9h- 2h/ 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:06:58 |ana                 |play                | 5c                 
+2013-04-27 10:06:58 |ana                 |hand                | 2c/ Qh- 4h- 7h/ 7d- Qd- 2d- Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:07:03 |maria               |play                |10s                 
+2013-04-27 10:07:03 |maria               |hand                | Qc- Kc/ Kh- 8h- 6h- 3h/ 4d- 9d-10d- Ad/ 4s- 6s
+2013-04-27 10:07:06 |joao                |play                | 9h                 
+2013-04-27 10:07:06 |joao                |hand                | 3c- 7c/ 5h- Jh-10h- 2h/ 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:07:10 |ana                 |play                | 7h                 
+2013-04-27 10:07:10 |ana                 |hand                | 2c/ Qh- 4h/ 7d- Qd- 2d- Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:08:03 |maria               |play                | Qc                 
+2013-04-27 10:08:03 |maria               |hand                | Kc/ Kh- 8h- 6h- 3h/ 4d- 9d-10d- Ad/ 4s- 6s
+2013-04-27 10:08:05 |joao                |play                | 3c                 
+2013-04-27 10:08:05 |joao                |hand                | 7c/ 5h- Jh-10h- 2h/ 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:08:08 |ana                 |play                | Qh                 
+2013-04-27 10:08:08 |ana                 |hand                | 2c/ 4h/ 7d- Qd- 2d- Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:08:11 |maria               |play                | Kh                 
+2013-04-27 10:08:11 |maria               |hand                | Kc/ 8h- 6h- 3h/ 4d- 9d-10d- Ad/ 4s- 6s
+2013-04-27 10:08:14 |joao                |play                | 7c                 
+2013-04-27 10:08:14 |joao                |hand                | 5h- Jh-10h- 2h/ 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:08:17 |ana                 |play                | 2c                 
+2013-04-27 10:08:17 |ana                 |hand                | 4h/ 7d- Qd- 2d- Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:08:21 |maria               |play                | 8h                 
+2013-04-27 10:08:21 |maria               |hand                | Kc/ 6h- 3h/ 4d- 9d-10d- Ad/ 4s- 6s
+2013-04-27 10:08:24 |joao                |play                | 5h                 
+2013-04-27 10:08:24 |joao                |hand                | Jh-10h- 2h/ 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:08:28 |ana                 |play                | 7d                 
+2013-04-27 10:08:28 |ana                 |hand                | 4h/ Qd- 2d- Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:08:32 |maria               |play                | Kc                 
+2013-04-27 10:08:32 |maria               |hand                | 6h- 3h/ 4d- 9d-10d- Ad/ 4s- 6s
+2013-04-27 10:08:37 |joao                |play                |10h                 
+2013-04-27 10:08:37 |joao                |hand                | Jh- 2h/ 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:08:39 |ana                 |play                | 4h                 
+2013-04-27 10:08:39 |ana                 |hand                | Qd- 2d- Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:08:41 |maria               |play                | 6h                 
+2013-04-27 10:08:41 |maria               |hand                | 3h/ 4d- 9d-10d- Ad/ 4s- 6s
+2013-04-27 10:08:53 |joao                |play                | Jh                 
+2013-04-27 10:08:53 |joao                |hand                | 2h/ 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:08:55 |ana                 |play                | Qd                 
+2013-04-27 10:08:55 |ana                 |hand                | 2d- Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:08:57 |maria               |play                | 3h                 
+2013-04-27 10:08:57 |maria               |hand                | 4d- 9d-10d- Ad/ 4s- 6s
+2013-04-27 10:08:59 |joao                |play                | 2h                 
+2013-04-27 10:08:59 |joao                |hand                | 3d- 5d- Kd/ 5s- As- 8s
+2013-04-27 10:09:01 |ana                 |play                | 2d                 
+2013-04-27 10:09:01 |ana                 |hand                | Jd/ 7s- Js- 9s- Qs- 3s
+2013-04-27 10:09:05 |maria               |play                | 4d                 
+2013-04-27 10:09:05 |maria               |hand                | 9d-10d- Ad/ 4s- 6s 
+2013-04-27 10:09:08 |joao                |play                | 3d                 
+2013-04-27 10:09:08 |joao                |hand                | 5d- Kd/ 5s- As- 8s 
+2013-04-27 10:09:12 |ana                 |play                | Jd                 
+2013-04-27 10:09:12 |ana                 |hand                | 7s- Js- 9s- Qs- 3s 
+2013-04-27 10:09:15 |maria               |play                | 9d                 
+2013-04-27 10:09:15 |maria               |hand                |10d- Ad/ 4s- 6s     
+2013-04-27 10:09:18 |joao                |play                | 5d                 
+2013-04-27 10:09:18 |joao                |hand                | Kd/ 5s- As- 8s     
+2013-04-27 10:09:22 |ana                 |play                | 7s                 
+2013-04-27 10:09:22 |ana                 |hand                | Js- 9s- Qs- 3s     
+2013-04-27 10:09:24 |maria               |play                |10d                 
+2013-04-27 10:09:24 |maria               |hand                | Ad/ 4s- 6s         
+2013-04-27 10:09:31 |joao                |play                | Kd                 
+2013-04-27 10:09:31 |joao                |hand                | 5s- As- 8s         
+2013-04-27 10:09:33 |ana                 |play                | Js                 
+2013-04-27 10:09:33 |ana                 |hand                | 9s- Qs- 3s         
+2013-04-27 10:09:39 |maria               |play                | Ad                 
+2013-04-27 10:09:39 |maria               |hand                | 4s- 6s             
+2013-04-27 10:09:42 |joao                |play                | 5s                 
+2013-04-27 10:09:42 |joao                |hand                | As- 8s             
+2013-04-27 10:09:54 |ana                 |play                | 9s                 
+2013-04-27 10:09:54 |ana                 |hand                | Qs- 3s             
+2013-04-27 10:09:58 |maria               |play                | 4s                 
+2013-04-27 10:09:58 |maria               |hand                | 6s                 
+2013-04-27 10:10:01 |joao                |play                | As                 
+2013-04-27 10:10:01 |joao                |hand                | 8s                 
+2013-04-27 10:10:04 |ana                 |play                | Qs                 
+2013-04-27 10:10:04 |ana                 |hand                | 3s                 
+2013-04-27 10:10:08 |maria               |play                | 6s                 
+2013-04-27 10:10:08 |maria               |hand                |                    
+2013-04-27 10:10:11 |joao                |play                | 8s                 
+2013-04-27 10:10:11 |joao                |hand                |                    
+2013-04-27 10:10:14 |ana                 |play                | 3s                 
+2013-04-27 10:10:14 |ana                 |hand                |                    

@@ -1,0 +1,15 @@
+when                |who                 |what                |result              
+2013-04-26 12:34:55 |joao                |deal                |-                   
+2013-04-26 12:34:55 |joao                |deal                |-                   
+2013-04-26 12:34:55 |joao                |receive_cards       | 9c- 5c- Kc-10c- Jc- Ac- 8c/ 6h/ Qd- Jd- Kd- 3d- 9d- 4d/10s- Qs- 7s
+2013-04-26 12:34:55 |joao                |deal                |-                   
+2013-04-26 12:34:55 |ana                 |receive_cards       | Qc- 2c- 4c- 6c/ 2h- Ah- 9h- 7h- 4h- Qh- 5h- Kh/ Ad-10d/ 4s- 3s- 9s
+2013-04-26 12:34:55 |maria               |receive_cards       | 7c- 3c/ 3h-10h- Jh- 8h/ 8d- 2d- 7d- 5d/ 8s- 5s- Js- As- 2s- 6s- Ks
+2013-04-26 12:35:06 |ana                 |play                | Qc                 
+2013-04-26 12:35:06 |ana                 |hand                | 2c- 4c- 6c/ 2h- Ah- 9h- 7h- 4h- Qh- 5h- Kh/ Ad-10d/ 4s- 3s- 9s
+2013-04-26 12:35:19 |maria               |play                | 7c                 
+2013-04-26 12:35:19 |maria               |hand                | 3c/ 3h-10h- Jh- 8h/ 8d- 2d- 7d- 5d/ 8s- 5s- Js- As- 2s- 6s- Ks
+2013-04-26 12:36:25 |joao                |play                | 9c                 
+2013-04-26 12:36:25 |joao                |hand                | 5c- Kc-10c- Jc- Ac- 8c/ 6h/ Qd- Jd- Kd- 3d- 9d- 4d/10s- Qs- 7s
+2013-04-26 12:36:32 |ana                 |play                | 2c                 
+2013-04-26 12:36:32 |ana                 |hand                | 4c- 6c/ 2h- Ah- 9h- 7h- 4h- Qh- 5h- Kh/ Ad-10d/ 4s- 3s- 9s
